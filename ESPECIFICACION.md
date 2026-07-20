@@ -55,7 +55,7 @@ por 2 paquetes de 1.000 g de cera → monto 3.905, cantidad 2.000 g → 1,9525 $
 | Campo | Tipo | Notas |
 |---|---|---|
 | `id` | string | |
-| `codigo` | string | Único, mayúsculas. `V` velas, `R` recipientes |
+| `codigo` | string | Único, mayúsculas. `V` velas, `R` recipientes, `RP` reposiciones |
 | `nombre` | string | |
 | `categoria` | enum | `VELA` \| `RECIPIENTE` \| `REPOSICION` |
 | `ceraAltoPF` | número | gramos |
@@ -345,7 +345,11 @@ Ejemplo verificado: 4.700 + 200 + 95,588 + 450 = 5.445,588 → 7.400.
 
 ## 5. Pantallas
 
-Navegación inferior de cuatro accesos: **Vender · Productos · Insumos · Ajustes**.
+Navegación inferior de cuatro accesos: **Vender · Pedidos · Productos · Ajustes**.
+
+La pestaña **Productos** contiene un selector de tres solapas en la parte
+superior: **Productos · Combos · Insumos**. Los insumos no tienen pestaña
+propia: se llega a ellos desde ahí.
 
 ### 5.1 Insumos
 Lista con buscador. Alta y edición con monto de compra y cantidad comprada; el
@@ -389,8 +393,8 @@ Es la que se usa frente al cliente. Debe ser la más rápida.
    ya armado y los botones "Copiar" y "Abrir WhatsApp" (ver 5.4.1).
 
 ### 5.4 Pedidos
-Lista filtrable, con dos etiquetas por pedido: entrega y cobro. Filtros rápidos
-por "Con saldo", "Pendientes de entrega" y "Cerrados". Para los pedidos con
+Lista filtrable, con dos etiquetas por pedido: entrega y cobro. Filtros rápidos:
+**"Con saldo" · "A entregar" · "Cerrados"**. Para los pedidos con
 saldo, mostrar el saldo en lugar del total, que es el número que importa.
 
 Ficha del pedido:
@@ -403,6 +407,12 @@ Ficha del pedido:
 4. Bloque **Historial**: línea de tiempo con la fecha y hora de cada instancia,
    de la más reciente a la más antigua.
 5. Botones de acción: "Marcar entregado", "Copiar mensaje" y "Abrir WhatsApp".
+
+**Alta y ficha son la misma pantalla, con dos estados.** Mientras el pedido no
+está guardado, la única acción al pie es "Guardar". Una vez guardado, aparecen
+los bloques de pagos e historial y el juego completo de acciones: "Registrar
+pago", "Marcar entregado", "Copiar mensaje" y "Abrir WhatsApp". No se
+construyen dos pantallas distintas.
 
 Marcar la entrega y registrar un pago son acciones separadas. Se puede retroceder
 la entrega; los pagos se anulan, no se retroceden.
@@ -515,7 +525,7 @@ Entrada: el `.xlsx` original. Se ejecuta una vez; después todo se carga en la a
 | `Materia prima` | Insumos | Filas 5–12 → `MATERIAL`, 25–29 → `ACCESORIO`, 32–43 → `EMPAQUE`, 51 → `MANO_DE_OBRA`. Son 26 insumos. La columna C trae el costo unitario ya calculado; derivar `montoCompra`/`cantidadCompra` de la fórmula cuando sea posible, si no, cargar monto = costo unitario y cantidad = 1 |
 | `Costos` filas 4–34 | Productos `VELA` | |
 | `Costos` filas 43–80 | Productos `RECIPIENTE` | |
-| `Costos` filas 92–94 | Productos `REPOSICION` | |
+| `Costos` filas 92–94 | Productos `REPOSICION` | La planilla los codifica `R150`, `R50`, `R170`, que se confunden con los recipientes. **El importador los renombra a `RP150`, `RP50`, `RP170`** y los deja anotados en el listado de revisión |
 | `Combos` | Combos | Bloques de 13 filas |
 
 Reglas de limpieza obligatorias:
@@ -532,12 +542,15 @@ Reglas de limpieza obligatorias:
    coincidir exactamente. En la app el vínculo pasa a ser por `id`.
    Nota: *Escencia* está escrito así en la planilla; corregirlo a *Esencia* en la
    app, pero el importador debe reconocer ambas grafías.
-7. **Marcar para revisión** el insumo *Bolsa gruesa*: su costo unitario calculado
+8. **Mapeo de categorías:** el rótulo de sección de la planilla se traduce —
+   `VELAS` → `VELA`, `RECIPIENTES` → `RECIPIENTE`, `Reposicion Cera BPF` →
+   `REPOSICION`.
+9. **Marcar para revisión** el insumo *Bolsa gruesa*: su costo unitario calculado
    es 304,17 pero la planilla fuerza 1.500. Importar con 1.500 y dejarlo señalado
    en un listado de "revisar" al final de la importación. Lo mismo con
    *Caja exagonal*, que no tiene costo unitario y sí un costo de producción
    forzado de 2.000.
-8. Informar al terminar: cuántos insumos, productos y combos se importaron, y
+10. Informar al terminar: cuántos insumos, productos y combos se importaron, y
    cuántos productos no reproducen el valor esperado de la planilla.
 
 ---

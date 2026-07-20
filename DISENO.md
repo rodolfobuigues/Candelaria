@@ -215,6 +215,7 @@ importe de seis dígitos, en una pantalla de 360 px de ancho.
 | **Fila de lista** | Alto mínimo 64 px, separador 1 px `gold-subtle`, sin separador después del último |
 | **Selector de cantidad** | Barra redondeada con `−` y `+` a los lados del número; cada botón, 48 × 48 px reales |
 | **Barra inferior** | Cuatro pestañas con ícono y rótulo: Vender, Pedidos, Productos, Ajustes. Activa con píldora `secondary-container` |
+| **Solapas** | Dentro de Productos: Productos · Combos · Insumos. Texto en `--texto-cuerpo`, la activa en `primary` con subrayado de 2 px; las otras en `on-surface-variant` |
 | **Barra flotante del carrito** | Fondo `inverse-surface`, `--radio-l`, flota sobre la lista con `--sombra-flotante`. A la izquierda cantidad y total; a la derecha el botón de avanzar |
 | **Botón flotante** | Círculo de 56 px, relleno `primary`, esquina inferior derecha, sobre el margen de la pantalla |
 | **Aviso** | Fondo `error-container` para atención, `surface-container` para informativo. Ícono a la izquierda, texto en `--texto-cuerpo-s` |
@@ -302,6 +303,9 @@ muestra el saldo con el rótulo "SALDO"; si está pagado, el total con el rótul
 Quitar la marca de agua decorativa detrás de las tarjetas.
 
 ### 8.5 Productos
+
+**Tres solapas en la parte superior: Productos · Combos · Insumos.** Los insumos
+no tienen pestaña propia en la barra inferior; se llega desde acá.
 
 Buscador, lista agrupada por sección con encabezados en estilo etiqueta, y por
 fila: nombre, código en gris, precio grande en `primary` y debajo "costo $ …"
