@@ -1,0 +1,26 @@
+{
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/motor-tests.cjs",
+            "timeout": 30,
+            "statusMessage": "Corriendo tests del motor..."
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/tokens-guard.cjs",
+            "timeout": 15,
+            "statusMessage": "Revisando literales fuera de tokens.css..."
+          }
+        ]
+      }
+    ]
+  }
+}

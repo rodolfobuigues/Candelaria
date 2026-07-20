@@ -51,15 +51,21 @@ manda la especificación).
 ## Orden de trabajo obligatorio
 
 1. **Motor de costeo** (funciones puras, sin UI ni DB).
-2. **Tests verdes** contra `fixtures_insumos.csv`, `fixtures_productos.csv`
+   Tests verdes contra `fixtures_insumos.csv`, `fixtures_productos.csv`
    y `fixtures_combos.json` (tolerancia 0,01). No se considera terminado
    el motor hasta que estos tests pasen.
-3. **Interfaz** (pantallas de ESPECIFICACION.md § 5 y DISEÑO.md § 8).
-4. **Importador** de la planilla original (ESPECIFICACION.md § 7) — es lo
+2. **Persistencia** (IndexedDB, ESPECIFICACION.md § 3): esquema y CRUD de
+   insumos, productos, combos, parámetros y pedidos; lógica pura de pagos
+   e historial de pedido (funciones puras, fecha por parámetro); exportación
+   e importación del respaldo JSON completo.
+3. **Tokens y estilos** (ESPECIFICACION.md § 6, DISEÑO.md § 10.1):
+   `tokens.css`, `componentes.css` y el test que falla ante cualquier
+   literal fuera de `tokens.css`.
+4. **Interfaz** (pantallas de ESPECIFICACION.md § 5 y DISEÑO.md § 8).
+5. **Importador** de la planilla original (ESPECIFICACION.md § 7) — es lo
    último, no lo primero: depende del motor y del modelo ya validados.
 
-No adelantar interfaz ni importador antes de que el motor tenga sus tests
-en verde.
+No adelantar una etapa antes de que la anterior tenga sus tests en verde.
 
 ## Otras reglas que no se deben perder de vista
 
