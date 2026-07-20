@@ -1,0 +1,146 @@
+/* Candelaria — tokens.css
+ * Única fuente de valores literales de la app (CLAUDE.md, DISEÑO.md § 10.1).
+ * Ningún otro archivo puede contener un color, radio, sombra o espaciado
+ * literal: todo lo que no está acá se referencia con var(--...).
+ */
+
+@font-face {
+  font-family: 'EB Garamond';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fuentes/eb-garamond-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fuentes/plus-jakarta-sans-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fuentes/plus-jakarta-sans-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fuentes/plus-jakarta-sans-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fuentes/plus-jakarta-sans-700.woff2') format('woff2');
+}
+
+:root {
+  /* === Sección 2 — Tokens de color === */
+
+  /* Superficies */
+  --color-surface:                   #fff8f6;
+  --color-surface-dim:               #e4d7d4;
+  --color-surface-container-lowest:  #ffffff;
+  --color-surface-container-low:     #fef1ed;
+  --color-surface-container:         #f9ebe7;
+  --color-surface-container-high:    #f3e5e1;
+  --color-surface-container-highest: #ede0dc;
+  --color-inverse-surface:           #362f2c;
+  --color-inverse-on-surface:        #fbeeea;
+
+  /* Texto */
+  --color-on-surface:                #201a18;
+  --color-on-surface-variant:        #55433d;
+  --color-outline:                   #88726c;
+  --color-outline-variant:           #dbc1ba;
+
+  /* Acento principal */
+  --color-primary:                   #944228;
+  --color-on-primary:                #ffffff;
+  --color-primary-container:         #b35a3e;
+  --color-on-primary-container:      #fff9f8;
+  --color-primary-fixed:             #ffdbd0;
+
+  /* Secundario */
+  --color-secondary:                 #775a19;
+  --color-on-secondary:              #ffffff;
+  --color-secondary-container:       #fed488;
+  --color-on-secondary-container:    #785a1a;
+
+  /* Terciario / neutro cálido */
+  --color-tertiary:                  #5c5b57;
+  --color-tertiary-container:        #75736f;
+
+  /* Error */
+  --color-error:                     #ba1a1a;
+  --color-on-error:                  #ffffff;
+  --color-error-container:           #ffdad6;
+  --color-on-error-container:        #93000a;
+
+  /* Dorado — agregado */
+  --color-gold:                      #c5a059;
+  --color-gold-subtle:               #c5a05933;  /* 20% — separadores */
+
+  /* Semánticos de estado */
+  --color-estado-pendiente:          var(--color-secondary-container);
+  --color-estado-entregado:          var(--color-tertiary);
+  --color-estado-impago:             var(--color-outline);
+  --color-estado-senado:             var(--color-secondary);
+  --color-estado-pagado:             var(--color-primary);
+  --color-positivo:                  var(--color-primary);
+  --color-negativo:                  var(--color-error);
+
+  /* === Sección 3 — Tipografía === */
+
+  --font-titulo: 'EB Garamond', Georgia, serif;
+  --font-texto:  'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --texto-display:  500 48px/56px var(--font-titulo);   /* -0.02em */
+  --texto-titulo-l: 500 32px/40px var(--font-titulo);
+  --texto-titulo-m: 500 24px/32px var(--font-titulo);
+  --texto-seccion:  600 20px/28px var(--font-texto);
+  --texto-cuerpo:   400 16px/24px var(--font-texto);
+  --texto-cuerpo-s: 400 14px/20px var(--font-texto);
+  --texto-etiqueta: 700 12px/16px var(--font-texto);    /* 0.05em, mayúsculas */
+  --texto-precio:   500 20px/24px var(--font-texto);    /* tabular */
+  --texto-precio-l: 600 28px/32px var(--font-texto);    /* tabular, totales */
+
+  /* === Sección 4 — Espaciado, formas y profundidad === */
+
+  --esp-base: 8px;
+  --esp-pantalla: 24px;   /* margen horizontal de toda pantalla */
+  --esp-elemento: 16px;
+  --esp-seccion: 40px;
+  --esp-stack-s: 4px;
+  --esp-stack-m: 12px;
+
+  --radio-s: 0.25rem;
+  --radio-m: 0.5rem;    /* botones, campos */
+  --radio-l: 1rem;
+  --radio-xl: 1.5rem;   /* tarjetas */
+  --radio-pill: 9999px; /* chips, etiquetas de estado */
+
+  --sombra-tarjeta: 0 8px 24px rgba(32, 26, 24, 0.06);
+  --sombra-flotante: 0 12px 32px rgba(32, 26, 24, 0.12);
+
+  /* === Dimensionales exigidos en prosa por §5 y §6, no declarados como
+   * variables en el documento original === */
+
+  --borde-fino: 1px;
+  --icono: 24px;
+  --toque-min: 48px;          /* alto de botón, campo y superficie mínima */
+  --alto-fila: 64px;
+  --fab: 56px;
+  --relleno-tarjeta: 20px;
+  --relleno-lista-inferior: 96px;
+}

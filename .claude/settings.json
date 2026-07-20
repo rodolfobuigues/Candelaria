@@ -3,15 +3,28 @@
     "claude-code-setup@claude-plugins-official": true
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/fixtures-guard.cjs",
+            "timeout": 10,
+            "statusMessage": "Verificando que no se editen las fixtures..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/motor-tests.cjs",
+            "command": "node .claude/hooks/suite-tests.cjs",
             "timeout": 30,
-            "statusMessage": "Corriendo tests del motor..."
+            "statusMessage": "Corriendo la suite completa..."
           },
           {
             "type": "command",

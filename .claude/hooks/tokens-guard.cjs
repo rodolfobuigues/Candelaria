@@ -1,8 +1,13 @@
 // PostToolUse (Edit|Write) — CLAUDE.md: "Ningún archivo fuera de
-// src/estilos/tokens.css puede contener un valor literal de color (hex,
-// rgb()), radio de borde, sombra o espaciado." Señal mínima detectable acá:
-// hex (#fff, #ffffff) y rgb()/rgba() fuera de tokens.css.
+// src/estilos/tokens.css puede contener un valor literal de color, radio de
+// borde, sombra o espaciado", ni una referencia a fuente remota. La regla
+// vive en un solo lugar: src/estilos/guardaLiterales.cjs. Este hook solo la
+// aplica al archivo recién tocado.
 const fs = require('fs');
+const path = require('path');
+const { revisarArchivo } = require(
+  path.join(__dirname, '..', '..', 'src', 'estilos', 'guardaLiterales.cjs')
+);
 
 let data = '';
 process.stdin.on('data', (chunk) => { data += chunk; });
@@ -16,10 +21,7 @@ process.stdin.on('end', () => {
 
   const filePath = (input.tool_input && input.tool_input.file_path) ||
     (input.tool_response && input.tool_response.filePath) || '';
-  const norm = filePath.replace(/\\/g, '/');
-
-  if (!norm.endsWith('.css')) process.exit(0);
-  if (norm.endsWith('src/estilos/tokens.css')) process.exit(0);
+  if (!filePath) process.exit(0);
 
   let contenido;
   try {
@@ -28,14 +30,17 @@ process.stdin.on('end', () => {
     process.exit(0);
   }
 
-  const hex = contenido.match(/#[0-9a-fA-F]{3,8}\b/);
-  const rgb = contenido.match(/\brgba?\(/);
+  const relativo = path.relative(process.cwd(), filePath);
+  const violaciones = revisarArchivo(relativo, contenido);
 
-  if (hex || rgb) {
-    const ejemplo = hex ? hex[0] : rgb[0];
+  if (violaciones.length > 0) {
+    const detalle = violaciones
+      .slice(0, 5)
+      .map((v) => `  línea ${v.linea} — ${v.tipo}: ${v.detalle}`)
+      .join('\n');
     console.log(JSON.stringify({
       decision: 'block',
-      reason: `Valor literal de color detectado (${ejemplo}) en ${filePath}, fuera de tokens.css. CLAUDE.md: "Ningún archivo fuera de src/estilos/tokens.css puede contener un valor literal de color, radio de borde, sombra o espaciado". Reemplazalo por una variable de tokens.css (var(--...)).`,
+      reason: `Literal fuera de tokens.css detectado en ${relativo}:\n${detalle}\n\nCLAUDE.md: "Ningún archivo fuera de src/estilos/tokens.css puede contener un valor literal de color, radio de borde, sombra o espaciado". Reemplazalo por una variable de tokens.css (var(--...)).`,
     }));
   }
   process.exit(0);
