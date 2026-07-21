@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { revisarArchivo, recorrerRepo, LISTA_BLANCA } from './guardaLiterales.cjs';
@@ -89,4 +91,90 @@ test('index.html exime el meta theme-color, pero no otros hex', () => {
 test('un .cjs no se revisa (fuera de la lista de extensiones)', () => {
   const violaciones = revisarArchivo('.claude/hooks/tokens-guard.cjs', F.regexHexComoCodigo);
   assert.deepStrictEqual(violaciones, []);
+});
+
+// --- Contrato de LISTA_BLANCA ---------------------------------------------
+//
+// El test anterior (repo completo) demuestra que hoy no hay violaciones,
+// pero no protege la lista blanca en sí: si alguien la amplía, la achica o
+// le cambia una ruta, el resto de los tests puede seguir en verde sin que
+// nadie note que la exención cambió. Este test compara LISTA_BLANCA campo
+// por campo contra el contenido exacto esperado, no contra "la incluye".
+
+const LISTA_BLANCA_ESPERADA = {
+  EXENTOS_COMPLETOS: [
+    { ruta: 'src/estilos/tokens.css', motivo: 'es la fuente de verdad de los literales' },
+    {
+      ruta: 'src/estilos/guardaLiterales.cjs',
+      motivo: 'el detector contiene por fuerza las cadenas que detecta',
+    },
+    {
+      ruta: 'src/estilos/guardaLiterales.fixtures.cjs',
+      motivo: 'ejemplos de violación usados por los tests del guardián',
+    },
+  ],
+  EXENTOS_PARCIALES: [
+    {
+      ruta: 'manifest.json',
+      claves: ['theme_color', 'background_color'],
+      motivo: 'colores del manifiesto PWA, no de la interfaz',
+    },
+    {
+      ruta: 'index.html',
+      claves: ['<meta name="theme-color">'],
+      motivo: 'refleja el mismo color del manifiesto en la barra del navegador',
+    },
+  ],
+  NO_ESCANEADOS: [
+    { ruta: 'node_modules/', motivo: 'dependencias de terceros' },
+    { ruta: 'dist/', motivo: 'salida de build' },
+    { ruta: 'coverage/', motivo: 'reportes de cobertura' },
+    { ruta: '.git/', motivo: 'control de versiones' },
+    { ruta: 'src/estilos/fuentes/', motivo: 'binarios (woff2) y licencias' },
+    { ruta: 'package-lock.json', motivo: 'generado, no se edita a mano' },
+  ],
+};
+
+test('LISTA_BLANCA es exactamente la esperada — ampliarla requiere autorización explícita', () => {
+  assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(LISTA_BLANCA)),
+    LISTA_BLANCA_ESPERADA,
+    'LISTA_BLANCA cambió respecto de lo esperado. Agregar, quitar o modificar ' +
+      'una entrada de la lista blanca debilita la regla de literales durante la ' +
+      'Fase 4 y requiere autorización explícita antes de actualizar este test.'
+  );
+});
+
+// --- Exención efectiva vs. regla efectiva ---------------------------------
+//
+// Que una ruta figure en LISTA_BLANCA no prueba que esExentoCompleto() la
+// reconozca en tiempo de ejecución (hoy compara con
+// `norm.endsWith('/' + e.ruta)`, que es frágil). Se escribe un archivo
+// temporal real con un literal prohibido y se revisa el mismo contenido en
+// dos rutas: una exenta, una no. Los resultados tienen que ser opuestos.
+
+function conArchivoTemporal(nombre, contenido, fn) {
+  const dirTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'candelaria-guarda-'));
+  const archivo = path.join(dirTmp, nombre);
+  fs.writeFileSync(archivo, contenido, 'utf8');
+  try {
+    return fn(fs.readFileSync(archivo, 'utf8'));
+  } finally {
+    fs.rmSync(dirTmp, { recursive: true, force: true });
+  }
+}
+
+test('exención efectiva: un literal prohibido en una ruta exenta no se reporta', () => {
+  conArchivoTemporal('tokens.css', F.colorYEspaciadoLiterales, (contenido) => {
+    const violaciones = revisarArchivo('src/estilos/tokens.css', contenido);
+    assert.deepStrictEqual(violaciones, []);
+  });
+});
+
+test('regla efectiva: el mismo literal en una ruta no exenta sí se reporta', () => {
+  conArchivoTemporal('componentes.css', F.colorYEspaciadoLiterales, (contenido) => {
+    const violaciones = revisarArchivo('src/estilos/componentes.css', contenido);
+    assert.ok(violaciones.some((v) => v.tipo === 'color-literal'));
+    assert.ok(violaciones.some((v) => v.tipo === 'espaciado-literal'));
+  });
 });

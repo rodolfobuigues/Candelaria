@@ -28,4 +28,5 @@ module.exports = {
   regexHexComoCodigo: 'const re = /#[0-9a-f]{3,8}/;',
   hexNoEximidoManifest: '#000000',
   hexNoEximidoIndexHtml: '#123456',
+  colorYEspaciadoLiterales: '.x { color: #944228; padding: 12px; }',
 };
