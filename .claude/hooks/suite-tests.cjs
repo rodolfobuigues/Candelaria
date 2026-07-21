@@ -18,7 +18,8 @@ process.stdin.on('end', () => {
   let input;
   try {
     input = JSON.parse(data);
-  } catch {
+  } catch (e) {
+    process.stderr.write(`suite-tests: entrada del hook no es JSON válido (${e.message}). No se bloquea — podría ser un cambio de formato de la entrada — pero conviene revisarlo.\n`);
     process.exit(0);
   }
 

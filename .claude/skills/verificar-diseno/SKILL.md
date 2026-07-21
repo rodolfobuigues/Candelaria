@@ -1,70 +1,83 @@
 ---
 name: verificar-diseno
-description: Corre las verificaciones de DISEÑO.md § 10 que todavía no están automatizadas en la suite (modo oscuro, superficies mínimas, contraste). Usar después de terminar una pantalla o antes de cerrar la Fase 4.
+description: Corre las verificaciones de DISENO.md § 10 que no están cubiertas por la suite de tests (ausencia de modo oscuro, superficies mínimas y desbordes medidos en navegador). Usar después de terminar una pantalla o antes de cerrar la Fase 4.
 ---
 
-`DISEÑO.md § 10` lista seis verificaciones automatizables. Las dos primeras
-ya corren solas en `src/estilos/guardaLiterales.test.js` (literales fuera de
-tokens.css, fuentes remotas) — no hace falta repetirlas acá. Esta skill cubre
-las cuatro restantes, en el orden en que se pueden chequear sin navegador
-primero:
+`DISENO.md § 10` lista seis verificaciones. **Tres ya corren solas en la
+suite y no se repiten acá:**
 
-## 1. Ausencia de modo oscuro
+| Verificación | Dónde corre |
+|---|---|
+| § 10.1 — literales fuera de `tokens.css` | `src/estilos/guardaLiterales.test.js` |
+| § 10.2 — fuentes remotas | `src/estilos/guardaLiterales.test.js` |
+| § 10.5 — contraste 4,5:1 | `src/estilos/contraste.test.js` |
+
+**No recalcules el contraste a mano.** La regla tiene una sola
+implementación, igual que el guardián de literales. Si una pantalla usa un
+par (fondo, texto) que el test no contempla, se agrega al test; no se
+verifica por fuera.
+
+Esta skill cubre las tres restantes.
+
+## 1. Ausencia de modo oscuro — § 10.3
 
 Buscá en todo el repo (fuera de `node_modules`, `dist`, `coverage`) las
-cadenas `modo oscuro` y `prefers-color-scheme`, y cualquier variante de
-interruptor de tema (`darkMode`, `theme-toggle`, `dark-mode`, etc.). CLAUDE.md
-y DISEÑO.md § 1 son explícitos: **un solo tema claro, sin interruptor**.
-Cualquier coincidencia fuera de la prosa de los propios `.md` de
-especificación es una violación.
+cadenas `modo oscuro`, `prefers-color-scheme`, `darkMode`, `theme-toggle`,
+`dark-mode` y cualquier variante de interruptor de tema. DISENO § 1 y
+CLAUDE.md son explícitos: **un solo tema claro, sin interruptor.** Cualquier
+coincidencia fuera de la prosa de los propios `.md` de especificación es una
+violación.
 
-## 2. Contraste 4,5:1 en texto menor a 24 px
+## 2. Superficies interactivas ≥ 48 × 48 px — § 10.4
 
-Los colores son fijos — están en `src/estilos/tokens.css` — así que el
-contraste se puede calcular sin renderizar nada:
+**Se mide en navegador, no con grep.** Que `componentes.css` declare
+`var(--toque-min)` no prueba que el botón mida 48 px renderizado: un
+contenedor `flex` puede comprimirlo, un `padding` heredado puede reducir el
+área real, y nada de eso aparece en el CSS. Verificarlo leyendo hojas de
+estilo es el mismo error que verificarlo en jsdom.
 
-1. Tomá los pares (fondo, texto) que la app usa en la práctica: la tabla de
-   "Reglas de uso" de DISEÑO.md § 2, más cada combinación de
-   `src/estilos/componentes.css` que fije `background` y `color` juntos
-   (`.etiqueta-estado--*`, `.chip-filtro[aria-pressed]`, `.aviso`,
-   `.barra-inferior a[aria-current]`, etc.).
-2. Para cada par, calculá el contraste con la fórmula estándar WCAG
-   (luminancia relativa por canal sRGB, `(L1 + 0.05) / (L2 + 0.05)`).
-3. Si el texto de ese par se usa en `--texto-etiqueta`, `--texto-cuerpo`,
-   `--texto-cuerpo-s` o cualquier tamaño menor a 24 px, exigí ≥ 4,5:1. Para
-   texto grande (`--texto-display`, `--texto-titulo-*`, `--texto-precio-l`)
-   alcanza 3:1.
-4. Reportá cualquier par que no llegue, con su contraste real. DISEÑO.md § 2
-   ya advierte que **el dorado (`--color-gold`) nunca va como texto sobre
-   fondo claro** — si aparece en un `color:`, es una violación directa sin
-   necesidad de calcular nada.
+- **Pre-chequeo con grep** (barato, no concluyente): sobre
+  `componentes.css`, confirmá que `.boton`, `.chip-filtro`, `.chip-seleccion`,
+  los botones del `.selector-cantidad`, `.barra-inferior a` y
+  `.boton-flotante` declaran `var(--toque-min)` o `var(--fab)`. Si alguno
+  declara un valor menor, ya es violación y no hace falta seguir.
+- **Veredicto con Playwright**: levantá la app a 360 px de ancho y medí con
+  `getBoundingClientRect()` cada elemento interactivo de la pantalla
+  —`button`, `a`, `input`, `[role="button"]`, todo lo que tenga
+  `cursor: pointer`—. Reportá los que midan menos de 48 en cualquiera de las
+  dos dimensiones, con su selector y sus medidas reales.
 
-## 3. Superficies interactivas ≥ 48 × 48 px
+## 3. Desbordes y relleno inferior — § 10.6 y § 5
 
-Grep sobre `src/estilos/componentes.css` y cualquier estilo inline que
-hubiera quedado: todo elemento con `cursor: pointer`, todo `button`, `a`
-dentro de `.barra-inferior`, `.chip-filtro`, `.chip-seleccion`, los botones
-del `.selector-cantidad` y el `.boton-flotante` tienen que medir
-`var(--toque-min)` (48 px) o `var(--fab)` (56 px) en alto y ancho reales, no
-solo de "área tocable" con padding. Si alguno usa un valor menor, es una
-violación de DISEÑO.md § 1.7.
+También necesita navegador.
 
-## 4. Importes sin partir e íconos correctos
+- A 360 px de ancho, con el catálogo sembrado: **ningún importe partido en
+  dos líneas.** El caso de prueba obligatorio es el nombre más largo del
+  catálogo, *"Bolsa organza 9x12 comunion"* (ver `fixtures_productos.csv`),
+  con un importe de seis dígitos.
+- **96 px de relleno inferior en toda lista** (`--relleno-lista-inferior`):
+  comprobá que el último elemento quede completamente visible con la barra
+  flotante del carrito o el botón flotante presentes, no solo que la regla
+  CSS esté escrita.
+- El nombre se trunca a dos líneas con puntos suspensivos, nunca más.
 
-Esto sí necesita navegador — no se puede verificar leyendo el CSS.
+Si Playwright no está disponible, **decíselo al usuario explícitamente y
+pedile que lo revise a mano en el celular.** No des estos puntos por
+verificados sin haberlos visto.
 
-- Si Playwright MCP está disponible: levantá la app, navegá a cada pantalla
-  construida, achicá el viewport a 360 px de ancho, cargá el producto con el
-  nombre más largo del catálogo real (*"Bolsa organza 9x12 comunion"*, ver
-  `fixtures_productos.csv`) y un importe de seis dígitos, y confirmá que
-  ningún importe se parte en dos líneas (prueba de aceptación explícita de
-  § 5).
-- Si no está disponible, decíselo al usuario explícitamente y pedile que lo
-  revise a mano en el celular — no des este punto por verificado sin haberlo
-  visto.
+## Nota sobre umbrales de contraste
+
+`contraste.test.js` exige 4,5:1 a todo texto menor a 24 px, que es lo que
+dice DISENO § 2. Para texto de 24 px o más, WCAG admite 3:1; esa relajación
+es una **derivación de WCAG, no algo que DISENO declare**, y solo aplica a
+`--texto-display`, `--texto-titulo-l`, `--texto-titulo-m` y
+`--texto-precio-l`. No aplica a `--texto-etiqueta` (12 px), `--texto-precio`
+(20 px), `--texto-seccion` (20 px), `--texto-cuerpo` ni `--texto-cuerpo-s`.
+En particular, la píldora de pestaña activa está en 4,57:1 con texto de
+12 px: el umbral que le corresponde es 4,5 y no se relaja.
 
 ## Reporte
 
-Terminá con una lista corta: qué pasó, qué no, y el archivo/línea de cada
-violación encontrada. No marques un punto como verificado si no pudiste
-correr el chequeo correspondiente (por ejemplo, el punto 4 sin Playwright).
+Terminá con una lista corta: qué pasó, qué no, y el archivo o el selector de
+cada violación, con las medidas reales cuando corresponda. **No marques un
+punto como verificado si no pudiste correr el chequeo correspondiente.**

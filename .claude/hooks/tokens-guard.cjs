@@ -24,7 +24,8 @@ process.stdin.on('end', () => {
   let input;
   try {
     input = JSON.parse(data);
-  } catch {
+  } catch (e) {
+    process.stderr.write(`tokens-guard: entrada del hook no es JSON válido (${e.message}). No se bloquea — podría ser un cambio de formato de la entrada, no un problema del guardián — pero conviene revisarlo.\n`);
     process.exit(0);
   }
 
@@ -43,7 +44,11 @@ process.stdin.on('end', () => {
   let contenido;
   try {
     contenido = fs.readFileSync(filePath, 'utf8');
-  } catch {
+  } catch (e) {
+    console.log(JSON.stringify({
+      decision: 'block',
+      reason: `El guardián de literales no pudo leer ${filePath} para revisarlo: ${e.message}. Falla cerrada: sin poder leer el archivo no se puede confirmar que no tenga un literal fuera de tokens.css, así que se bloquea la edición.`,
+    }));
     process.exit(0);
   }
 
