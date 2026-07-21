@@ -78,12 +78,17 @@ no existía en el YAML pero cumple una función real en las referencias.
   --color-gold:                      #c5a059;
   --color-gold-subtle:               #c5a05933;  /* 20% — separadores */
 
-  /* Semánticos de estado */
+  /* Semánticos de estado — siempre par completo fondo/texto */
   --color-estado-pendiente:          var(--color-secondary-container);
+  --color-on-estado-pendiente:       var(--color-on-secondary-container);
   --color-estado-entregado:          var(--color-tertiary);
-  --color-estado-impago:             var(--color-outline);
+  --color-on-estado-entregado:       var(--color-on-primary);
+  --color-estado-impago:             var(--color-surface-container-highest);
+  --color-on-estado-impago:          var(--color-on-surface-variant);
   --color-estado-senado:             var(--color-secondary);
+  --color-on-estado-senado:          var(--color-on-secondary);
   --color-estado-pagado:             var(--color-primary);
+  --color-on-estado-pagado:          var(--color-on-primary);
   --color-positivo:                  var(--color-primary);
   --color-negativo:                  var(--color-error);
 }
@@ -104,6 +109,7 @@ no existía en el YAML pero cumple una función real en las referencias.
 | Separadores de lista | `gold-subtle` |
 | Barra flotante del carrito | Fondo `inverse-surface`, texto `inverse-on-surface` |
 | Píldora de pestaña activa | Fondo `secondary-container`, texto `on-secondary-container` |
+| Etiqueta de estado | Fondo `estado-<x>`, texto `on-estado-<x>` — siempre el par completo, nunca texto blanco por defecto |
 | Avisos de atención | Fondo `error-container`, texto `on-error-container` |
 
 **El dorado nunca se usa como color de texto sobre fondo claro** — no alcanza el
@@ -211,7 +217,7 @@ importe de seis dígitos, en una pantalla de 360 px de ancho.
 | **Campo de entrada** | Fondo `surface-container-low`, sin borde en reposo, borde 1 px `gold` al enfocar, `--radio-m`, etiqueta siempre visible arriba en estilo etiqueta |
 | **Chip de filtro** | Píldora. Inactivo: fondo `surface-container`, texto `on-surface-variant`. Activo: fondo `primary`, texto `on-primary` |
 | **Chip de selección** (categoría, unidad) | Igual que el de filtro. Se agrupa en filas que se envuelven, nunca en scroll horizontal oculto |
-| **Etiqueta de estado** | Píldora chica, estilo etiqueta en mayúsculas, color según los tokens de estado |
+| **Etiqueta de estado** | Píldora chica, estilo etiqueta en mayúsculas. Fondo `estado-<x>` con texto `on-estado-<x>`, siempre el par completo — nunca texto blanco por defecto. `impago` usa `surface-container-highest` de fondo, no `outline`: es un color de borde, prohibido como texto o relleno de contenido por § 2 |
 | **Fila de lista** | Alto mínimo 64 px, separador 1 px `gold-subtle`, sin separador después del último |
 | **Selector de cantidad** | Barra redondeada con `−` y `+` a los lados del número; cada botón, 48 × 48 px reales |
 | **Barra inferior** | Cuatro pestañas con ícono y rótulo: Vender, Pedidos, Productos, Ajustes. Activa con píldora `secondary-container` |

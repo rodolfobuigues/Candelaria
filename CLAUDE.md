@@ -12,10 +12,20 @@ manda la especificación).
 - Persistencia local en **IndexedDB**. Todo el motor de cálculo vive en
   funciones puras, en un módulo sin dependencias de la interfaz ni de la
   base de datos (testeable contra las fixtures).
+- **Interfaz: Preact con JSX sobre Vite. JavaScript, sin TypeScript.**
+  Enrutado por hash escrito a mano (`hashchange`), sin librería de enrutado
+  ni History API. Sin librería de estado: `Context` para parámetros globales
+  y catálogo, `useState` para el resto. Ninguna dependencia nueva sin
+  autorización explícita del dueño.
+- **Host: GitHub Pages**, repositorio `candelaria`, `base: '/candelaria/'`
+  en Vite. IndexedDB se aísla por origen: cambiar de host pierde los datos
+  salvo respaldo JSON (ver ESPECIFICACION.md § 2).
 - Único respaldo real: exportación/importación de un archivo JSON completo.
   Excel es un mecanismo aparte, no intercambiable con el JSON (ver
   ESPECIFICACION.md § 5.6).
-- SheetJS **empaquetado en la app**, nunca desde CDN.
+- Excel: **ExcelJS empaquetado en la app**, nunca desde CDN. Se descarta
+  SheetJS: su versión gratuita no sombrea celdas ni oculta columnas, ambas
+  exigidas por § 5.6.
 - **Ninguna fuente remota.** Tipografías (EB Garamond, Plus Jakarta Sans)
   empaquetadas localmente. Nunca Google Fonts ni ningún CDN.
 - **Un solo tema claro.** No hay modo oscuro, no hay `prefers-color-scheme`,
@@ -39,12 +49,25 @@ manda la especificación).
 
 ## Prohibición de literales fuera de tokens.css
 
+Regla completa en ESPECIFICACION.md § 6.2. Resumen operativo:
+
 - **Ningún archivo fuera de `src/estilos/tokens.css` puede contener un
   valor literal de color (hex, `rgb(`), radio de borde, sombra o
-  espaciado.** `src/estilos/componentes.css` solo consume variables de
-  `tokens.css`.
-- Debe existir un test automatizado que recorra el código y falle ante
-  cualquier violación (ESPECIFICACION.md § 6, DISEÑO.md § 10.1).
+  espaciado, ni una referencia a fuente remota.** `src/estilos/componentes.css`
+  solo consume variables de `tokens.css`.
+- Prohibido además en la interfaz: Tailwind, styled-components, emotion,
+  cualquier CSS-in-JS, y `style={{ ... }}` con valores literales en JSX
+  (solo se admite para asignar variables CSS).
+- **Una sola implementación de la regla**, en `src/estilos/guardaLiterales.cjs`.
+  La consumen el hook `.claude/hooks/tokens-guard.cjs` y la suite de tests;
+  ningún consumidor tiene su propia expresión regular.
+- **Lista blanca cerrada y congelada**, con el motivo de cada entrada
+  documentado en ESPECIFICACION.md § 6.2. Ampliarla requiere autorización
+  explícita del dueño; un test de contrato falla ante cualquier agregado,
+  quite o modificación.
+- **El hook falla cerrado**: si el guardián no carga o tira excepción, la
+  edición se bloquea. Cuatro tests obligatorios: contrato de la lista
+  blanca, exención efectiva, regla efectiva y falla cerrada.
 - Valores iniciales de parámetros globales van en
   `src/config/parametros.js`, no hardcodeados en el motor ni la UI.
 
@@ -66,6 +89,11 @@ manda la especificación).
    último, no lo primero: depende del motor y del modelo ya validados.
 
 No adelantar una etapa antes de que la anterior tenga sus tests en verde.
+
+El criterio objetivo completo son **25 puntos numerados** en
+ESPECIFICACION.md § 8 (motor y datos, Excel, pedidos, mensajes, estilos e
+interfaz, PWA). No se considera terminada una etapa mientras alguno de los
+puntos que le corresponden siga en rojo o sin verificar.
 
 ## Otras reglas que no se deben perder de vista
 

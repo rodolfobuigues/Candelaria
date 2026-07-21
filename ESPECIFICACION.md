@@ -6,6 +6,9 @@ Documento de entrada para construir la aplicación. Reemplaza la planilla
 **Idioma de toda la interfaz: español rioplatense. Moneda: pesos argentinos.
 Formato numérico: separador de miles `.`, decimal `,`.**
 
+*Actualizado: 20/07/2026 — incorpora las decisiones técnicas cerradas durante la
+construcción (interfaz, host, librería de Excel, guardián de literales).*
+
 ---
 
 ## 1. Alcance
@@ -20,14 +23,34 @@ Formato numérico: separador de miles `.`, decimal `,`.**
 | Importación única de la planilla actual | |
 | Exportación e importación de respaldo JSON | |
 | Exportación e importación de la base en Excel | |
+| Borrado completo de la base desde Ajustes | Baja individual de pedidos |
 
 ## 2. Stack
 
 - **PWA instalable**, offline-first. Sin backend, sin servicios pagos.
 - Persistencia local en **IndexedDB**.
+- **Interfaz: Preact con JSX sobre Vite. JavaScript, sin TypeScript.** API
+  idéntica a React con 3 KB de runtime; reversible a React con un alias en
+  `vite.config.js`. Los hooks se importan de `preact/hooks`. En campos de
+  formulario, el evento en vivo es `onInput`, no `onChange`.
+- **Enrutado por hash**, escrito a mano sobre `hashchange`. Sin librería de
+  enrutado y sin History API: GitHub Pages no tiene fallback de SPA.
+- **Sin librería de estado.** `Context` para parámetros globales y catálogo,
+  `useState` para el resto.
+- **Ninguna dependencia nueva sin autorización explícita del dueño.**
+- Excel: **ExcelJS**, empaquetado (ver 5.6).
+- **Dispositivo objetivo: Android / Chrome.** Ancho de referencia, 360 px.
+- **Host: GitHub Pages**, repositorio `candelaria`, URL
+  `https://<usuario>.github.io/candelaria/`, `base: '/candelaria/'` en Vite.
 - Diseñada para uso en celular, en vertical, con una mano. Debe funcionar sin
   conexión de datos, porque se usa frente al cliente.
 - Respaldo: exportación e importación de un único archivo JSON con toda la base.
+
+**Advertencia de origen.** IndexedDB se aísla por **origen** (esquema + host +
+puerto), no por ruta. Se puede mover el repositorio o la carpeta sin perder
+datos; cambiar de host sí los pierde. La migración de host se resuelve con
+exportar el respaldo JSON, instalar en el origen nuevo e importar. Un dominio
+propio eliminaría el candado por completo y queda como opción abierta.
 
 ---
 
@@ -80,7 +103,8 @@ de cálculo, no se copia. Actualizar el padre actualiza a todos los hijos.
 La cadena debe detectar ciclos y rechazarlos al guardar.
 
 En la planilla actual esto existe como `=E59`, `=C55`, `=C79` en la columna C
-de las filas 60, 61 y 80. La importación debe convertirlo en esta relación.
+de las filas 60, 61 y 80. La importación debe convertirlo en esta relación,
+**leyendo las fórmulas de las celdas, no sus valores calculados.**
 
 #### 3.2.2 Extras
 
@@ -134,6 +158,9 @@ Los pedidos ya tomados **no** se recalculan (ver 5.3).
 | `pagado` | derivado | Suma de los pagos |
 | `saldo` | derivado | `total − pagado` |
 | `estadoCobro` | derivado | Ver 3.5.2 |
+
+**Los cuatro campos derivados no se persisten.** Se calculan en cada lectura;
+la escritura los despoja aunque el objeto los traiga.
 
 #### 3.5.1 Línea de pedido
 
@@ -417,6 +444,10 @@ construyen dos pantallas distintas.
 Marcar la entrega y registrar un pago son acciones separadas. Se puede retroceder
 la entrega; los pagos se anulan, no se retroceden.
 
+**No hay baja individual de pedidos.** El numerador es correlativo y el
+historial es de solo agregado. Las pruebas se limpian borrando toda la base
+(ver 5.5).
+
 ### 5.4.1 Mensaje para WhatsApp
 
 Al confirmar un pedido, la app arma el mensaje según la plantilla de la sección
@@ -432,9 +463,17 @@ WhatsApp"**.
   ficha del pedido.
 - Cada mensaje generado queda asentado en el historial.
 
+`navigator.clipboard` exige contexto seguro: la prueba solo es válida sobre
+HTTPS o `localhost`, nunca sobre `http://192.168.x.x`.
+
 ### 5.5 Ajustes
-Parámetros globales (3.4), plantillas de mensaje (3.6), respaldo JSON, exportación e
-importación en Excel (sección 5.6), importación de la planilla original.
+Parámetros globales (3.4), plantillas de mensaje (3.6), respaldo JSON,
+exportación e importación en Excel (sección 5.6), importación de la planilla
+original y **borrado completo de la base**.
+
+El borrado completo pide confirmación escribiendo la palabra `BORRAR`, ofrece
+exportar el respaldo JSON antes de ejecutarlo, y es la única forma de limpiar
+datos de prueba antes de la puesta en marcha.
 
 ### 5.6 Exportación e importación en Excel
 
@@ -463,6 +502,8 @@ Un `.xlsx` con una hoja por entidad: `Insumos`, `Productos`, `Combos`,
   `Pedidos` (cabecera, con total, pagado y saldo), `PedidosLineas`,
   `PedidosPagos` e `PedidosHistorial`. **Ninguna de las cuatro se reimporta.**
   Un pedido histórico no se edita en una planilla, y menos su historial.
+- La hoja `Pedidos` se arma leyendo por el repositorio con derivados, nunca
+  crudo sobre la tienda de pedidos: total, pagado y saldo no están persistidos.
 
 #### Importación
 
@@ -479,7 +520,7 @@ Nunca sobrescribe en silencio. El flujo es obligatoriamente:
    variación mayor**, porque es la consecuencia que importa.
 4. Confirmar o cancelar.
 5. Antes de aplicar, la app **guarda automáticamente un respaldo JSON** del
-   estado previo, para poder volver atrás.
+   estado previo, **descargado como archivo**, no solo retenido en memoria.
 
 Reglas de reconciliación:
 
@@ -492,8 +533,21 @@ Reglas de reconciliación:
 
 #### Nota técnica
 
-Usar SheetJS **empaquetado en la app, no desde un CDN**: la importación tiene
-que funcionar sin conexión.
+Usar **ExcelJS**, empaquetado en la app, **no desde un CDN**: la importación
+tiene que funcionar sin conexión.
+
+Se descarta SheetJS: su versión gratuita no permite sombrear celdas ni ocultar
+columnas —ambas exigidas por esta sección— y su paquete de npm está congelado
+en una versión vieja sin mantenimiento.
+
+ExcelJS asume entorno Node: en el navegador hay que usar su build empaquetado o
+proveer el polyfill de `Buffer`. **Verificarlo con la app compilada, no solo en
+el servidor de desarrollo**, porque el fallo aparece en tiempo de ejecución.
+
+Para importar la planilla original (sección 7), leer **las fórmulas** de las
+celdas, no sus valores calculados: `heredaCostoDe` se deriva de `=E59`, `=C55`
+y `=C79`, y `montoCompra`/`cantidadCompra` de las fórmulas de la columna C de
+`Materia prima`.
 
 ---
 
@@ -504,15 +558,68 @@ botones tocando un solo archivo.
 
 | Archivo | Contiene |
 |---|---|
-| `src/estilos/tokens.css` | Colores, radios, sombras, espaciados, tipografía y tamaños, como variables CSS. Un solo tema claro; ver DISEÑO.md |
+| `src/estilos/tokens.css` | Colores, radios, sombras, espaciados, tipografía, tamaños y `@font-face` locales, como variables CSS. Un solo tema claro; ver DISEÑO.md |
 | `src/estilos/componentes.css` | Botón, tarjeta, input, lista, tabla. **Solo** consumen variables de `tokens.css` |
+| `src/estilos/fuentes/` | Los `.woff2` empaquetados y sus licencias OFL |
 | `src/config/formato.js` | Moneda, miles, decimales, fechas |
 | `src/config/parametros.js` | Valores iniciales de la tabla 3.4 |
 
+### 6.1 Tokens dimensionales
+
+DISEÑO.md exige en prosa medidas que no declara como variables. Sin ellas,
+`componentes.css` no se puede escribir sin violar la regla. Van en `tokens.css`:
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--borde-fino` | 1px | Contornos y separadores |
+| `--icono` | 24px | Íconos de trazo |
+| `--toque-min` | 48px | Alto de botón y campo, superficie mínima |
+| `--alto-fila` | 64px | Fila de lista |
+| `--fab` | 56px | Botón flotante |
+| `--relleno-tarjeta` | 20px | Relleno interno de tarjeta |
+| `--relleno-lista-inferior` | 96px | Para que la barra flotante no tape el último elemento |
+
+### 6.2 Guardián de literales
+
 **Regla verificable: ningún archivo fuera de `tokens.css` puede contener un
-valor literal de color, radio de borde, sombra o espaciado.** Incluir un test
-que recorra el código y falle si encuentra un hexadecimal, un `rgb(`, o un `px`
-en una propiedad de radio o espaciado fuera de `tokens.css`.
+valor literal de color, radio de borde, sombra o espaciado, ni una referencia a
+una fuente remota.**
+
+- **Una sola implementación**, en `src/estilos/guardaLiterales.cjs`. La consumen
+  el hook `.claude/hooks/tokens-guard.cjs` y la suite de tests. Ningún consumidor
+  puede tener su propia expresión regular.
+- **Extensiones revisadas:** `.css`, `.js`, `.jsx`, `.cjs`, `.mjs`, `.html`,
+  `.svg`, `.json`. El barrido alcanza `.claude/hooks/` y `src/estilos/`.
+- **Prohibiciones adicionales de la interfaz:** Tailwind, styled-components,
+  emotion y cualquier CSS-in-JS; `style={{ ... }}` con valores literales en JSX
+  —solo se admite para asignar variables CSS: `style={{ '--x': valor }}`.
+- **El hook falla cerrado.** Si el módulo del guardián no carga o tira
+  excepción, la edición se bloquea. Un guardián roto nunca permite escribir.
+- **Lista blanca cerrada y congelada**, con el motivo de cada entrada:
+
+| Grupo | Entradas | Motivo |
+|---|---|---|
+| `EXENTOS_COMPLETOS` | `src/estilos/tokens.css` | Es la fuente de verdad de los literales |
+| | `src/estilos/guardaLiterales.cjs` | El detector contiene por fuerza las cadenas que detecta |
+| | `src/estilos/guardaLiterales.fixtures.cjs` | Ejemplos de violación usados por sus tests |
+| `EXENTOS_PARCIALES` | `manifest.json` → `theme_color`, `background_color` | Exigidos por la especificación de PWA |
+| | `index.html` → `<meta name="theme-color">` | Ídem |
+| `NO_ESCANEADOS` | `node_modules/`, `dist/`, `coverage/`, `.git/`, `src/estilos/fuentes/`, `package-lock.json` | Binarios o dependencias: la regla no aplica |
+
+**Ampliar la lista blanca requiere autorización explícita del dueño.** Un test
+de contrato compara la constante contra ese contenido exacto y falla ante
+cualquier agregado, quite o modificación.
+
+Tests obligatorios del guardián:
+
+1. **Contrato**: la lista blanca es exactamente la acordada.
+2. **Exención efectiva**: un literal en un archivo exento no dispara.
+3. **Regla efectiva**: el mismo literal en un archivo no exento sí dispara.
+4. **Falla cerrada**: con el guardián roto, el hook bloquea la edición.
+
+**Advertencia de descubrimiento de tests.** `node --test` no escanea
+directorios que empiezan con punto: un archivo `*.test.js` dentro de `.claude/`
+nunca se ejecuta. Todo test vive bajo `src/`.
 
 ---
 
@@ -530,13 +637,15 @@ Entrada: el `.xlsx` original. Se ejecuta una vez; después todo se carga en la a
 
 Reglas de limpieza obligatorias:
 
-1. **Códigos a mayúsculas.** La planilla mezcla `v26`, `r29`, `a4` con `V27`, `A1`.
-2. **Descartar filas vacías** (35–41, 81–90) y los valores sueltos de `AD459:AD467`.
-3. **Ignorar la columna F de `Materia prima`.** No la usa ninguna fórmula.
-4. **Ignorar el bloque `Costos!AC120:AD146`.** Es un espejo de precios de combos
+1. **Leer las fórmulas de las celdas, no sus valores calculados.** Es lo que
+   permite derivar la herencia de costo y las cantidades de compra.
+2. **Códigos a mayúsculas.** La planilla mezcla `v26`, `r29`, `a4` con `V27`, `A1`.
+3. **Descartar filas vacías** (35–41, 81–90) y los valores sueltos de `AD459:AD467`.
+4. **Ignorar la columna F de `Materia prima`.** No la usa ninguna fórmula.
+5. **Ignorar el bloque `Costos!AC120:AD146`.** Es un espejo de precios de combos
    con tres `#N/A`; en la app el combo se referencia por id.
-5. **Convertir `C60`, `C61`, `C80`** en la relación `heredaCostoDe`.
-6. **Ojo con la clave de búsqueda.** La planilla vincula producto e insumo por
+6. **Convertir `C60`, `C61`, `C80`** en la relación `heredaCostoDe`.
+7. **Ojo con la clave de búsqueda.** La planilla vincula producto e insumo por
    el **nombre** del insumo (`VLOOKUP` sobre la columna B de `Materia prima`),
    no por el código. Los nombres de los encabezados de `Costos` (fila 2) deben
    coincidir exactamente. En la app el vínculo pasa a ser por `id`.
@@ -570,7 +679,7 @@ Archivos provistos:
 
 Los tres usan `;` como separador y `.` como decimal.
 
-Tests obligatorios:
+### 8.1 Motor y datos
 
 1. Para cada uno de los 76 productos, el motor reproduce `esp_materiales`,
    `esp_subtotal`, `esp_costo_prod` y `esp_precio` con tolerancia de 0,01.
@@ -582,12 +691,18 @@ Tests obligatorios:
    nada, y el precio resultante es correcto.
 7. Desactivar un insumo en uso avisa en qué recetas aparece y no rompe los
    pedidos históricos.
+
+### 8.2 Excel
+
 8. Exportar a Excel, modificar el monto de compra de un insumo en la planilla,
    reimportar: la previsualización anuncia exactamente ese cambio, y al
    confirmar los precios afectados se recalculan.
 9. Reimportar un Excel exportado y no modificado no genera ningún cambio.
 10. Un Excel con un código duplicado o una referencia inexistente se rechaza
     entero, sin aplicar nada, listando las filas con problema.
+
+### 8.3 Pedidos
+
 11. Un pedido de $ 39.440 con una seña de $ 15.000 queda en estado `SEÑADO`
     con saldo $ 24.440. Al registrar un segundo pago de $ 24.440 pasa a
     `PAGADO` con saldo cero.
@@ -595,14 +710,38 @@ Tests obligatorios:
 13. El historial de ese pedido contiene, con fecha y hora, los eventos de
     creación, los dos pagos y la entrega, en orden.
 14. Anular un pago recalcula el saldo y deja el pago visible como anulado.
+
+### 8.4 Mensajes
+
 15. La plantilla de confirmación reemplaza todos los marcadores; editarla en
     configuración cambia el mensaje generado sin tocar el código.
-15b. Un pedido sin seña genera un mensaje sin los renglones de seña y saldo;
+16. Un pedido sin seña genera un mensaje sin los renglones de seña y saldo;
     el mismo pedido con una seña los incluye, usando la misma plantilla.
-15c. La nota interna no aparece en ningún mensaje generado.
-16. El test de estilos de la sección 6 pasa.
-17. La app carga y opera con el modo avión activado, incluida la importación
+17. La nota interna no aparece en ningún mensaje generado.
+
+### 8.5 Estilos e interfaz
+
+18. Los cuatro tests del guardián de literales (sección 6.2) pasan.
+19. **Contraste**: cada par de tokens declarado en la tabla de "Reglas de uso"
+    de DISEÑO.md alcanza 4,5:1. Se calcula parseando `tokens.css`, sin navegador.
+20. **A 360 px de ancho, con el catálogo real cargado**: ningún importe partido
+    en dos líneas, ninguna superficie interactiva menor a 48 × 48 px, 96 px de
+    relleno inferior en las listas. Se verifica con Playwright sobre Chromium.
+    **No es automatizable en jsdom**, que no tiene motor de layout y devuelve
+    ceros: un test así siempre pasa y no mide nada.
+21. Ninguna hoja de estilos ni documento referencia una fuente remota, y las
+    familias empaquetadas incluyen todos los pesos que usa DISEÑO.md.
+
+### 8.6 PWA
+
+22. La app carga y opera con el modo avión activado, incluida la importación
     de un Excel y la copia del mensaje al portapapeles.
+23. El `scope` y el `start_url` del manifest incluyen `/candelaria/`, y el
+    service worker se registra con ese scope. Si quedan en `/`, el service
+    worker no controla la app y el modo avión falla en silencio.
+24. Al haber una versión nueva, la app avisa y permite actualizar; no se queda
+    con la versión vieja cacheada.
+25. Al instalar se solicita `navigator.storage.persist()`.
 
 Caso de referencia para depurar — **V1 Pino chico**:
 
@@ -626,5 +765,6 @@ Caso de referencia para depurar — **V1 Pino chico**:
 No implementar, aunque parezcan obvios: stock, órdenes de producción, listas de
 precios por cliente, múltiples dispositivos, informes de rentabilidad por
 período, gestión de proveedores, modo oscuro, cuentas de usuario, respaldo en
-la nube, envío automático de mensajes, recordatorios
-programados, cuenta corriente por cliente con arrastre de saldos entre pedidos.
+la nube, envío automático de mensajes, recordatorios programados, cuenta
+corriente por cliente con arrastre de saldos entre pedidos, baja individual de
+pedidos, TypeScript, librerías de estado y de enrutado.
