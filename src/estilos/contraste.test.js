@@ -111,6 +111,15 @@ const PARES_MINIMO_4_5 = [
   // por defecto que usa el resto de la app sobre cualquier superficie.
   { uso: 'Fila de total resaltada', texto: 'color-on-surface', fondo: 'color-surface-container-high' },
   { uso: 'Campo de entrada', texto: 'color-on-surface', fondo: 'color-surface-container-low' },
+  // Etiquetas de estado — cada una es su propio par completo fondo/texto
+  // (ver DISEÑO.md § 2 y § 6): nunca un color de estado con texto blanco
+  // por defecto. "impago" ya no usa outline (es color de borde, prohibido
+  // como texto por § 2); usa surface-container-highest de fondo.
+  { uso: 'Etiqueta de estado — pendiente', texto: 'color-on-estado-pendiente', fondo: 'color-estado-pendiente' },
+  { uso: 'Etiqueta de estado — entregado', texto: 'color-on-estado-entregado', fondo: 'color-estado-entregado' },
+  { uso: 'Etiqueta de estado — impago', texto: 'color-on-estado-impago', fondo: 'color-estado-impago' },
+  { uso: 'Etiqueta de estado — señado', texto: 'color-on-estado-senado', fondo: 'color-estado-senado' },
+  { uso: 'Etiqueta de estado — pagado', texto: 'color-on-estado-pagado', fondo: 'color-estado-pagado' },
 ];
 
 test('criterio 19: todos los pares (texto, fondo) de la tabla de Reglas de uso alcanzan 4,5:1', () => {
@@ -132,58 +141,4 @@ test('el dorado nunca alcanza contraste de texto — confirma por qué DISEÑO �
   const sobreTarjeta = ratioParTextoFondo(tokens, 'color-gold', 'color-surface-container-lowest');
   assert.ok(sobrePantalla < 4.5, `dorado sobre pantalla dio ${sobrePantalla.toFixed(2)}:1, se esperaba que fallara`);
   assert.ok(sobreTarjeta < 4.5, `dorado sobre tarjeta dio ${sobreTarjeta.toFixed(2)}:1, se esperaba que fallara`);
-});
-
-// --- Etiquetas de estado: datos para una decisión de diseño pendiente -----
-//
-// DISEÑO.md § 6 dice "Etiqueta de estado: píldora chica... color según los
-// tokens de estado", pero no dice si esa etiqueta es (A) una píldora de
-// color con texto claro encima, o (B) texto de ese color sobre un fondo
-// neutro. No hay un token "on-estado-*" para la hipótesis A: se usa
-// color-on-primary como el candidato más cercano a "texto claro" ya
-// existente en tokens.css (blanco), dejando explícito que es un supuesto,
-// no un token dedicado.
-//
-// A propósito NO hay assert de "todos llegan a 4,5:1" acá: cuál de las dos
-// hipótesis se usa, y si algún estado necesita un tratamiento distinto, es
-// una decisión del dueño (ver conversación), no algo que este test deba
-// forzar. Lo único que se garantiza es que los cinco tokens de estado
-// siguen existiendo y son medibles — si se renombra uno, esto sí falla.
-const ESTADOS = [
-  { nombre: 'pendiente', token: 'color-estado-pendiente' },
-  { nombre: 'entregado', token: 'color-estado-entregado' },
-  { nombre: 'impago', token: 'color-estado-impago' },
-  { nombre: 'señado', token: 'color-estado-senado' },
-  { nombre: 'pagado', token: 'color-estado-pagado' },
-];
-
-function medirEtiquetasDeEstado(tokens) {
-  const resultados = [];
-  for (const { nombre, token } of ESTADOS) {
-    resultados.push({
-      nombre,
-      hipotesis: 'A — píldora de color, texto claro (color-on-primary) encima',
-      ratio: ratioParTextoFondo(tokens, 'color-on-primary', token),
-    });
-    resultados.push({
-      nombre,
-      hipotesis: 'B — texto de color sobre pantalla (color-surface)',
-      ratio: ratioParTextoFondo(tokens, token, 'color-surface'),
-    });
-    resultados.push({
-      nombre,
-      hipotesis: 'B — texto de color sobre tarjeta (color-surface-container-lowest)',
-      ratio: ratioParTextoFondo(tokens, token, 'color-surface-container-lowest'),
-    });
-  }
-  return resultados;
-}
-
-test('etiquetas de estado: los cinco tokens siguen existiendo y son medibles (sin veredicto de diseño)', () => {
-  const tokens = leerTokens();
-  const resultados = medirEtiquetasDeEstado(tokens);
-  assert.equal(resultados.length, ESTADOS.length * 3);
-  for (const r of resultados) {
-    assert.ok(Number.isFinite(r.ratio) && r.ratio > 0, `ratio inválido para ${r.nombre} (${r.hipotesis})`);
-  }
 });

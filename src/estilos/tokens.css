@@ -91,12 +91,21 @@
   --color-gold:                      #c5a059;
   --color-gold-subtle:               #c5a05933;  /* 20% — separadores */
 
-  /* Semánticos de estado */
+  /* Semánticos de estado — siempre par completo fondo/texto; nunca un
+   * estado sin su on-estado-* correspondiente (ver ESPECIFICACION.md § 6.2
+   * y DISEÑO.md § 2 y § 6). "impago" usa surface-container-highest, no
+   * outline: outline es un color de borde, DISEÑO § 2 ya prohíbe usarlo
+   * como texto o relleno de contenido. */
   --color-estado-pendiente:          var(--color-secondary-container);
+  --color-on-estado-pendiente:       var(--color-on-secondary-container);
   --color-estado-entregado:          var(--color-tertiary);
-  --color-estado-impago:             var(--color-outline);
+  --color-on-estado-entregado:       var(--color-on-primary);
+  --color-estado-impago:             var(--color-surface-container-highest);
+  --color-on-estado-impago:          var(--color-on-surface-variant);
   --color-estado-senado:             var(--color-secondary);
+  --color-on-estado-senado:          var(--color-on-secondary);
   --color-estado-pagado:             var(--color-primary);
+  --color-on-estado-pagado:          var(--color-on-primary);
   --color-positivo:                  var(--color-primary);
   --color-negativo:                  var(--color-error);
 

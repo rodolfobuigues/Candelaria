@@ -169,11 +169,11 @@ h1, h2, h3 {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-.etiqueta-estado--pendiente  { background: var(--color-estado-pendiente);  color: var(--color-on-secondary-container); }
-.etiqueta-estado--entregado  { background: var(--color-estado-entregado);  color: var(--color-inverse-on-surface); }
-.etiqueta-estado--impago     { background: var(--color-estado-impago);     color: var(--color-inverse-on-surface); }
-.etiqueta-estado--senado     { background: var(--color-estado-senado);     color: var(--color-on-secondary); }
-.etiqueta-estado--pagado     { background: var(--color-estado-pagado);     color: var(--color-on-primary); }
+.etiqueta-estado--pendiente  { background: var(--color-estado-pendiente);  color: var(--color-on-estado-pendiente); }
+.etiqueta-estado--entregado  { background: var(--color-estado-entregado);  color: var(--color-on-estado-entregado); }
+.etiqueta-estado--impago     { background: var(--color-estado-impago);     color: var(--color-on-estado-impago); }
+.etiqueta-estado--senado     { background: var(--color-estado-senado);     color: var(--color-on-estado-senado); }
+.etiqueta-estado--pagado     { background: var(--color-estado-pagado);     color: var(--color-on-estado-pagado); }
 
 /* === Fila de lista === */
 
