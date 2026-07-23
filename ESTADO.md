@@ -1,6 +1,6 @@
 # Candelaria — Estado del proyecto
 
-**Actualizado: 21/07/2026**
+**Actualizado: 23/07/2026**
 
 Documento vivo. Se actualiza al cerrar cada fase. Es lo primero que hay que leer
 al abrir un chat nuevo.
@@ -12,11 +12,11 @@ al abrir un chat nuevo.
 | | |
 |---|---|
 | Carpeta | `D:\Colo\Candelaria` |
-| Repositorio | git iniciado, último commit `72e526f` (Skills y agente corregidos, guardián de requires y contraste automatizado) |
-| Tests | **157 en verde**, 18 suites, 0 fallos |
-| Fase actual | **Fase 3 cerrada. Fase 4 arrancando** por el paso 11b (cimientos de la interfaz) |
-| Próximo paso | Paso 11b: `src/config/formato.js`, `src/persistencia/catalogoRepo.js`, `src/desarrollo/siembra.js`, armazón de enrutado y barra inferior |
-| Sin commitear | Nada, salvo `skills_para_revisar.txt` (volcado de lectura para revisión manual, no se versiona) |
+| Repositorio | git iniciado. Último commit registrado: `f28bbc0` (armazón de interfaz), más el commit del reporter `dot` |
+| Tests | **179 en verde**, 25 suites, 0 fallos |
+| Fase actual | **Fase 4 en curso.** Paso 11b (cimientos) cerrado |
+| Próximo paso | Pantalla 1 de 12: **Productos** (DISEÑO 8.5) |
+| Sin commitear | Nada pendiente |
 
 ---
 
@@ -29,7 +29,7 @@ al abrir un chat nuevo.
 | 2 — Motor de cálculo | ✅ | 76 productos, 26 insumos y 2 combos validados contra las fixtures |
 | 3a — Persistencia | ✅ | IndexedDB, respaldo JSON, pagos e historial |
 | 3b — Tokens de estilo | ✅ | Tokens, componentes, fuentes locales y guardián con 4 tests de control |
-| 4 — Interfaz | 🔄 | Cimientos + 12 pantallas, de a una |
+| 4 — Interfaz | 🔄 | **Cimientos ✅. 0 de 12 pantallas** |
 | 5 — Importador y Excel | ⬜ | Incluye "Revisar importación" (DISEÑO 8.10) |
 | 6 — PWA publicada | ⬜ | GitHub Pages |
 | 7 — Datos reales | ⬜ | |
@@ -43,24 +43,42 @@ src/motor/calculo.js                      funciones puras del cálculo
 src/motor/calculo.test.js
 src/motor/fixtures.test.js                valida contra las 3 fixtures
 src/config/parametros.js                  valores iniciales
+src/config/formato.js                     moneda, decimales, fechas — única implementación
+src/config/formato.test.js
 src/persistencia/esquema.js               tiendas de IndexedDB
 src/persistencia/db.js                    adaptador CRUD
 src/persistencia/pedidoLogica.js          funciones puras de pedido
 src/persistencia/pedidosRepo.js           lectura con derivados
 src/persistencia/respaldo.js              exportar/importar JSON
+src/persistencia/catalogoRepo.js          catálogo con costo y precio derivados, memoizado
+src/persistencia/catalogoRepo.test.js
+src/desarrollo/siembra.js                 carga las fixtures en IndexedDB (solo desarrollo)
+src/desarrollo/siembraFixtures.js
+src/desarrollo/siembra.test.js
 src/estilos/tokens.css                    DISEÑO 2, 3 y 4 + 7 tokens dimensionales + @font-face
-src/estilos/componentes.css               los 13 componentes de DISEÑO 6, solo var(--...)
+src/estilos/componentes.css               componentes de DISEÑO 6 + estructura común 7
 src/estilos/fuentes/                      eb-garamond-500 y plus-jakarta-sans 400/500/600/700 + OFL
 src/estilos/guardaLiterales.cjs           implementación única de la regla de literales
 src/estilos/guardaLiterales.fixtures.cjs  ejemplos de violación para los tests
 src/estilos/guardaLiterales.test.js       contrato, exención efectiva, regla efectiva
-src/estilos/tokensGuardHook.test.js       falla cerrada del hook (require() y lectura del archivo)
-src/estilos/contraste.test.js             criterio 19: contraste WCAG parseando tokens.css, sin navegador
-src/hooks/hooksRequireGuard.test.js       regresión: ningún hook con require() de proyecto fuera de try/catch
+src/estilos/tokensGuardHook.test.js       falla cerrada del hook
+src/estilos/contraste.test.js             criterio 19, sin navegador
+src/hooks/hooksRequireGuard.test.js       ningún require() de proyecto fuera de try/catch
+src/interfaz/main.jsx                     punto de entrada
+src/interfaz/App.jsx
+src/interfaz/enrutador.js                 hash, escrito a mano sobre hashchange
+src/interfaz/comun/BarraInferior.jsx
+src/interfaz/comun/Encabezado.jsx
+index.html
+vite.config.js                            base: '/candelaria/'
 .claude/hooks/motor-tests.cjs             bloquea si el motor falla
 .claude/hooks/tokens-guard.cjs            delega en guardaLiterales.cjs; falla cerrado
 .claude/hooks/fixtures-guard.cjs          protege las fixtures
-.claude/hooks/suite-tests.cjs             corre la suite
+.claude/hooks/suite-tests.cjs             corre la suite con reporter dot
+.claude/skills/nueva-pantalla/SKILL.md    corregida: 12 pantallas, reglas de Preact
+.claude/skills/verificar-diseno/SKILL.md  corregida: no duplica contraste, mide en navegador
+.claude/agents/revisor-diseno.md          corregido: lee DISEÑO §6 y formato de moneda
+.mcp.json                                 servidor de Playwright (conservado para Fase 4)
 ```
 
 ### Verificación de los controles
@@ -71,11 +89,21 @@ src/hooks/hooksRequireGuard.test.js       regresión: ningún hook con require()
 |---|---|---|
 | 20/07 | Beneficio de 0,35 a 0,50 | 78 tests en rojo |
 | 20/07 | Hexadecimal fuera de `tokens.css` | Bloqueado al guardar |
-| 20/07 | `#ffffff` dentro de `.claude/hooks/tokens-guard.cjs` | Detectado (antes era punto ciego) |
+| 20/07 | `#ffffff` dentro de `.claude/hooks/tokens-guard.cjs` | Detectado |
 | 20/07 | `padding: 12px` en un `.cjs` de `src/` | Detectado |
 | 20/07 | Entrada nueva en `EXENTOS_COMPLETOS` | Bloqueado por el hook al guardar |
-| 21/07 | `tokens-guard.cjs` apuntado a un archivo que no existe (catch silencioso de `fs.readFileSync`) | Bloqueado (antes pasaba sin detectar) |
-| 21/07 | `require()` de un módulo del proyecto reintroducido fuera de `try/catch` en una copia de prueba de `tokens-guard.cjs` | Detectado por `hooksRequireGuard.test.js` |
+| 23/07 | `/* #ffffff */` en `.claude/hooks/fixtures-guard.cjs` | `fail 1` — punto ciego de `.cjs` confirmado cerrado |
+
+### Verificación visual del armazón — 23/07
+
+A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
+
+| Elemento | Medida | Mínimo | Resultado |
+|---|---|---|---|
+| Las cuatro pestañas de la barra inferior | 88 × 55 px | 48 × 48 px | ✅ |
+| Rótulos Vender · Pedidos · Productos · Ajustes | Sin corte ni superposición | | ✅ |
+| Fuentes | EB Garamond y Plus Jakarta Sans cargan | | ✅ |
+| Ruta base | `http://localhost:5173/candelaria/` | | ✅ |
 
 ---
 
@@ -91,7 +119,8 @@ src/hooks/hooksRequireGuard.test.js       regresión: ningún hook con require()
    guardar, solo "Guardar". Guardado, aparecen pagos, historial y el resto.
 4. **Filtros de pedidos:** Con saldo · A entregar · Cerrados.
 5. **Reposiciones:** prefijo `RP`. El importador renombra `R150`, `R50` y `R170`
-   a `RP150`, `RP50`, `RP170`.
+   a `RP150`, `RP50`, `RP170`. La siembra de desarrollo **no** los renombra: esa
+   regla es del importador, no de la siembra.
 6. **Interfaz: Preact con JSX sobre Vite, JavaScript sin TypeScript.** API
    idéntica a React con 3 KB de runtime. Nada de lo ya construido depende del
    framework; reversible a React con un alias en `vite.config.js`. Hooks desde
@@ -115,26 +144,26 @@ src/hooks/hooksRequireGuard.test.js       regresión: ningún hook con require()
     .cjs .mjs .html .svg .json`, incluido `.claude/hooks/`.
 11. **El hook falla cerrado.** Hasta el 20/07 `tokens-guard.cjs` hacía
     `require()` sin `try/catch`: con el guardián roto, el hook crasheaba sin
-    emitir JSON y **la edición pasaba**. Corregido con dos `try/catch` que
-    emiten `block`. Estuvo fallando abierto durante toda la Fase 2 y 3a.
+    emitir JSON y **la edición pasaba**. Corregido con `try/catch` que emiten
+    `block`, incluido el caso de no poder leer el archivo tocado.
 12. **`node --test` no escanea directorios que empiezan con punto.** Todo test
-    puesto bajo `.claude/` es invisible para `npm test`, pese al comentario de
-    `suite-tests.cjs` que afirma lo contrario. **Todos los tests viven bajo
-    `src/`.**
-13. **`tokens-guard.cjs` tenía un segundo catch silencioso**, en
-    `fs.readFileSync` del archivo tocado (no del `require()` del guardián):
-    si no podía leer el archivo, la edición pasaba sin revisión. Corregido:
-    ahora bloquea. `fixtures-guard.cjs` y `suite-tests.cjs` no tienen el
-    defecto original de `tokens-guard.cjs` (no hacen `require()` de ningún
-    módulo del proyecto). `src/hooks/hooksRequireGuard.test.js` es la
-    regresión que lo blinda hacia adelante en los tres hooks.
-14. **Etiquetas de estado: cada estado es un par completo**
-    `--color-estado-<x>` / `--color-on-estado-<x>`, nunca un color de estado
-    con texto blanco por defecto. `impago` usa `surface-container-highest`
-    de fondo, no `outline`: `outline` es un color de borde, DISEÑO § 2 ya lo
-    prohíbe como texto o relleno de contenido. Los cinco pares verificados en
-    `contraste.test.js`, con assert de ≥ 4,5:1 igual que el resto de los
-    pares — ya no es una decisión abierta.
+    puesto bajo `.claude/` es invisible para `npm test`. **Todos los tests viven
+    bajo `src/`.**
+13. **Las etiquetas de estado usan pares fondo/texto.** Cada
+    `--color-estado-<x>` tiene su `--color-on-estado-<x>`. Ninguna hardcodea
+    texto blanco. `impago` dejó de apuntar a `outline` —que es color de borde,
+    no de relleno— y pasó a píldora neutra clara. Los cinco pares están
+    asertados a ≥ 4,5:1 en `contraste.test.js`.
+14. **`catalogoRepo` no detecta cambios de insumo por sí solo.** Invalida al
+    cambiar un parámetro global; para un insumo hace falta llamar a
+    `invalidarCatalogo()` explícitamente. Está asertado en un test, no
+    escondido.
+15. **`suite-tests.cjs` no dispara con `.jsx`**, solo con `.js` y `.cjs` bajo
+    `src/`. Es deliberado: no hay tests de componentes que correr, y disparar
+    179 tests por cada guardado de pantalla no aporta. El control de la Fase 4
+    es `tokens-guard.cjs`, que sí escanea `.jsx`.
+16. **Reporter `dot`** en `npm test` y en el hook, para no volcar 179 líneas al
+    contexto en cada corrida. El detalle sale con `npm run test:detalle`.
 
 ---
 
@@ -142,7 +171,8 @@ src/hooks/hooksRequireGuard.test.js       regresión: ningún hook con require()
 
 | Pendiente | Cuándo |
 |---|---|
-| Montar Playwright en Fase 4, no en Fase 6: es la única forma de verificar los criterios 20 y 22 | Fase 4 |
+| **Toda ruta que cree, edite o desactive un insumo debe llamar a `invalidarCatalogo()`.** El catálogo memoizado no lo detecta solo | Fase 4, pantalla 8 |
+| Verificar cada pantalla a 360 px en DevTools con `console.table`: ancho y alto ≥ 48 px, ningún rótulo cortado, ningún importe partido | Fase 4, cada pantalla |
 | La herencia de costo (`heredaCostoDe`) está escrita pero **no ejercitada con datos reales**. Los tres productos que la usan pasan por ahí recién en el importador | Fase 5 |
 | El exportador a Excel **debe leer con `listarPedidos`**, nunca crudo sobre la tienda de pedidos | Fase 5 |
 | ExcelJS necesita `Buffer` en el navegador: verificarlo con la app **compilada**, no solo en el servidor de desarrollo | Fase 5 |
@@ -155,33 +185,51 @@ src/hooks/hooksRequireGuard.test.js       regresión: ningún hook con require()
 
 ## Fase 4 — orden de construcción
 
-**Paso 11b, cimientos**, antes de la primera pantalla: `src/config/formato.js`,
-`src/persistencia/catalogoRepo.js` (catálogo con costo y precio derivados,
-memoizado), `src/desarrollo/siembra.js` (carga las fixtures para poder ver las
-pantallas antes de que exista el importador; excluida de la compilación de
-producción) y el armazón de enrutado y barra inferior.
+**Paso 11b, cimientos: ✅ cerrado.** `formato.js`, `catalogoRepo.js`,
+`siembra.js`, y el armazón con enrutado por hash y barra inferior.
 
-| # | Pantalla | DISEÑO |
-|---|---|---|
-| 1 | Productos (tres solapas) | 8.5 |
-| 2 | Ficha de producto | 8.6 |
-| 3 | Vender | 8.1 |
-| 4 | Pedido (alta y ficha, dos estados) | 8.2 |
-| 5 | Mensaje generado | 8.3 |
-| 6 | Registro de pago | 8.11 |
-| 7 | Pedidos | 8.4 |
-| 8 | Alta y edición de insumo | 8.7 |
-| 9 | Alta y edición de producto con receta | 8.11 |
-| 10 | Alta y edición de combo | 8.11 |
-| 11 | Ajustes | 8.8 |
-| 12 | Editor de plantillas | 8.9 |
+| # | Pantalla | DISEÑO | Estado |
+|---|---|---|---|
+| 1 | Productos (tres solapas) | 8.5 | ⬜ |
+| 2 | Ficha de producto | 8.6 | ⬜ |
+| 3 | Vender | 8.1 | ⬜ |
+| 4 | Pedido (alta y ficha, dos estados) | 8.2 | ⬜ |
+| 5 | Mensaje generado | 8.3 | ⬜ |
+| 6 | Registro de pago | 8.11 | ⬜ |
+| 7 | Pedidos | 8.4 | ⬜ |
+| 8 | Alta y edición de insumo | 8.7 | ⬜ |
+| 9 | Alta y edición de producto con receta | 8.11 | ⬜ |
+| 10 | Alta y edición de combo | 8.11 | ⬜ |
+| 11 | Ajustes | 8.8 | ⬜ |
+| 12 | Editor de plantillas | 8.9 | ⬜ |
 
 "Revisar importación" (8.10) se construye en la Fase 5, junto al importador.
 
-Cerrar cada pedido de pantalla con: *verificá contra el catálogo sembrado, a
-360 px, que ningún importe se parta en dos líneas, ninguna superficie
-interactiva mida menos de 48 × 48 px, las listas tengan 96 px de relleno
-inferior y el guardián esté en verde. Mostrame la salida.*
+---
+
+## Cómo trabajar para gastar menos crédito
+
+División de tareas, decidida el 23/07:
+
+| Tarea | Quién |
+|---|---|
+| Diagnóstico: `git status`, `npm test`, `findstr`, `npm run build` | El dueño, en PowerShell |
+| Verificación visual a 360 px con DevTools | El dueño |
+| Decidir, revisar salidas, redactar documentos | El chat de Claude |
+| Código que necesita iterar contra un test hasta que pase | Claude Code |
+
+Reglas:
+
+- **Una pantalla por sesión.** Cerrar y reabrir Claude Code entre pantallas: el
+  contexto acumulado se paga en cada mensaje.
+- **Nunca pedirle diagnóstico** a Claude Code. Los comandos los corre el dueño y
+  le pega solo la línea que importa.
+- **No pedirle que verifique a 360 px.** Eso lo hace el dueño en DevTools.
+- **Sonnet por defecto**, Opus solo para decisiones de arquitectura.
+- **Pedirle secciones, no documentos:** "leé DISEÑO §8.5", nunca "leé
+  DISEÑO.md".
+- **Editar a mano no dispara los hooks.** Después de cualquier edición desde
+  VS Code, correr `npm test` a mano.
 
 ---
 
