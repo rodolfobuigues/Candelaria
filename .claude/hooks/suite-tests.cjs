@@ -29,7 +29,7 @@ process.stdin.on('end', () => {
   if (!esCodigoFuente) process.exit(0);
 
   try {
-    execSync('node --test', { stdio: 'pipe', cwd: process.cwd() });
+    execSync('node --test --test-reporter=dot', { stdio: 'pipe', cwd: process.cwd() });
     process.exit(0);
   } catch (error) {
     const salida = (error.stdout ? error.stdout.toString() : '') +
