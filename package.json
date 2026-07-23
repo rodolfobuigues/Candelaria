@@ -3,9 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "fake-indexeddb": "^6.2.5"
+    "fake-indexeddb": "^6.2.5",
+    "vite": "8.1.5"
+  },
+  "dependencies": {
+    "preact": "10.29.7"
   }
 }

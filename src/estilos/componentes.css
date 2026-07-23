@@ -49,6 +49,34 @@ h1, h2, h3 {
   padding-bottom: var(--relleno-lista-inferior);
 }
 
+/* === Estructura común (DISEÑO.md § 7) === */
+
+.encabezado {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-elemento);
+  padding: var(--esp-elemento) var(--esp-pantalla);
+}
+.encabezado h1 {
+  margin: 0;
+}
+.encabezado__accion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-on-surface);
+  cursor: pointer;
+}
+
+.contenido {
+  padding: 0 var(--esp-pantalla);
+}
+
 /* === Tarjeta === */
 
 .tarjeta {

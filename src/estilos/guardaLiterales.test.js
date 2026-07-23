@@ -88,7 +88,7 @@ test('index.html exime el meta theme-color, pero no otros hex', () => {
   assert.equal(violaciones[0].detalle.slice(0, 7), F.hexNoEximidoIndexHtml);
 });
 
-test('un .cjs no se revisa (fuera de la lista de extensiones)', () => {
+test('un patrón de regex que parece hexadecimal no se reporta como color literal', () => {
   const violaciones = revisarArchivo('.claude/hooks/tokens-guard.cjs', F.regexHexComoCodigo);
   assert.deepStrictEqual(violaciones, []);
 });
