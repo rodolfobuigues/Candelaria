@@ -5,6 +5,16 @@ App de costeo, precios y pedidos para reemplazar la planilla
 `ESPECIFICACION.md`. Fuente de verdad visual: `DISENO.md` (ante diferencia,
 manda la especificación).
 
+## Quién puede tocar cada documento
+
+- **`ESTADO.md`** se puede actualizar por cuenta propia al cerrar cada fase
+  (o un paso relevante dentro de una fase): estado de las fases, qué está
+  construido, decisiones tomadas, pendientes.
+- **`ESPECIFICACION.md` y `DISEÑO.md` no se tocan sin que el dueño lo pida
+  explícitamente.** Son las fuentes de verdad funcional y visual; un cambio
+  no pedido en cualquiera de las dos se replica en todo lo que se construya
+  después.
+
 ## Stack y restricciones duras
 
 - **PWA instalable, offline-first. Sin backend, sin servicios pagos, sin
