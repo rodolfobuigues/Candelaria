@@ -862,6 +862,31 @@ h1, h2, h3 {
   font: var(--texto-cuerpo);
 }
 
+.importacion-revision {
+  display: grid;
+  gap: var(--esp-elemento);
+}
+
+.importacion-hojas,
+.importacion-pendientes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.importacion-hojas li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  padding: var(--esp-stack-m) 0;
+  border-bottom: var(--borde-fino) solid var(--color-gold-subtle);
+}
+
+.importacion-pendientes li {
+  padding: var(--esp-stack-m) 0;
+  color: var(--color-on-error-container);
+}
+
 /* === Barra inferior === */
 
 .barra-inferior {

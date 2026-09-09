@@ -17,6 +17,7 @@ const CAMPOS = [
 export function Ajustes() {
   const [parametros, setParametros] = useState(null);
   const [mensaje, setMensaje] = useState(null);
+  const [revision, setRevision] = useState(null);
   useEffect(() => { abrirDB().then(obtenerParametrosVigentes).then(setParametros); }, []);
   async function guardarCambios() {
     const db = await abrirDB(); await guardarParametros(db, parametros); invalidarCatalogo(); setMensaje('Parámetros guardados. El catálogo se recalculará al volver a abrirlo.');
@@ -69,13 +70,20 @@ export function Ajustes() {
   }
   async function revisarExcel(evento) {
     const archivo = evento.currentTarget.files?.[0]; if (!archivo) return;
-    try { const libro = await leerXlsx(archivo); const resumen = libro.hojas.map((hoja) => `${hoja.nombre}: ${Math.max(hoja.filas.length - 1, 0)} filas`).join(' · '); setMensaje(`Planilla leída correctamente. ${resumen}`); } catch (e) { setMensaje(`No se pudo leer la planilla: ${e.message}`); } finally { evento.currentTarget.value = ''; }
+    try {
+      const libro = await leerXlsx(archivo);
+      const pendientes = [];
+      for (const hoja of libro.hojas) hoja.filas.forEach((fila, indice) => { if (fila[0] && !fila[1]) pendientes.push(`${hoja.nombre}, fila ${indice + 1}: código ${fila[0]} sin nombre`); });
+      setRevision({ nombre: archivo.name, hojas: libro.hojas.map((hoja) => ({ nombre: hoja.nombre, filas: Math.max(hoja.filas.length - 1, 0) })), pendientes });
+      setMensaje('Planilla leída. La aplicación todavía no modificó ningún dato.');
+    } catch (e) { setMensaje(`No se pudo leer la planilla: ${e.message}`); } finally { evento.currentTarget.value = ''; }
   }
   if (!parametros) return <p class="texto-cuerpo-s">Cargando ajustes…</p>;
   return <section class="ajustes-pantalla">
     <section class="ajustes-seccion"><h2 class="texto-seccion">Parámetros de cálculo</h2><div class="ajustes-campos">{CAMPOS.map(([id, etiqueta, paso]) => <label class="campo-entrada" key={id}><span>{etiqueta}</span><input type="number" step={paso} value={parametros[id]} onInput={(e) => setParametros({ ...parametros, [id]: Number(e.currentTarget.value) })} /></label>)}</div><p class="texto-cuerpo-s">Cambiar estos valores recalcula el catálogo, pero no modifica los pedidos ya tomados.</p><button type="button" class="boton-primario" onClick={guardarCambios}>Guardar parámetros</button></section>
     <section class="ajustes-seccion"><h2 class="texto-seccion">Mensajes</h2>{['confirmacion', 'pago', 'recordatorio'].map((id) => <button type="button" class="fila-ajuste" key={id} onClick={() => navegarA(`plantilla/${id}`)}><span>{id[0].toUpperCase() + id.slice(1)}</span><span>›</span></button>)}</section>
     {mensaje && <p class="aviso aviso--info">{mensaje}</p>}
+    {revision && <section class="tarjeta importacion-revision"><h2 class="texto-seccion">Revisar importación</h2><span class="texto-cuerpo-s">{revision.nombre}</span><ul class="importacion-hojas">{revision.hojas.map((hoja) => <li key={hoja.nombre}><span>{hoja.nombre}</span><strong>{hoja.filas} filas</strong></li>)}</ul>{revision.pendientes.length > 0 ? <><h3 class="texto-seccion">Casos para consultar</h3><ul class="importacion-pendientes">{revision.pendientes.map((pendiente) => <li key={pendiente}>{pendiente}</li>)}</ul></> : <p class="texto-cuerpo-s">No se detectaron casos estructurales pendientes. La aplicación todavía no aplicó la planilla.</p>}</section>}
     <section class="ajustes-seccion"><h2 class="texto-seccion">Datos</h2><button type="button" class="fila-ajuste" onClick={exportar}><span>Respaldo</span><span>Descargar JSON</span></button><label class="fila-ajuste"><span>Importar respaldo JSON</span><input type="file" accept="application/json,.json" onChange={importar} /></label><button type="button" class="fila-ajuste" onClick={exportarCSV}><span>Exportar para Excel</span><span>CSV</span></button><label class="fila-ajuste"><span>Revisar planilla Excel</span><input type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" onChange={revisarExcel} /></label><label class="fila-ajuste"><span>Importar insumos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'insumos')} /></label><label class="fila-ajuste"><span>Importar productos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'productos')} /></label><label class="fila-ajuste"><span>Importar combos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'combos')} /></label></section>
   </section>;
 }
