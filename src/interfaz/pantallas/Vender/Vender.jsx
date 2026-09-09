@@ -186,6 +186,11 @@ export function Vender() {
     requestAnimationFrame(() => pedidoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }, [mostrarPedido]);
 
+  function irAlPedido() {
+    setMostrarPedido(true);
+    requestAnimationFrame(() => pedidoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
   useEffect(() => {
     let activo = true;
     async function cargar() {
@@ -326,10 +331,10 @@ export function Vender() {
           />
         </div>
       )}
-      {lineas.length > 0 && !mostrarPedido && (
+      {lineas.length > 0 && (
         <div class="barra-flotante-carrito">
           <span>{lineas.reduce((suma, linea) => suma + linea.cantidad, 0)} artículos · {formatearImporte(total)}</span>
-          <button type="button" class="boton-barra" onClick={() => setMostrarPedido(true)}>Ver pedido</button>
+          <button type="button" class="boton-barra" onClick={irAlPedido}>Ver pedido</button>
         </div>
       )}
     </section>

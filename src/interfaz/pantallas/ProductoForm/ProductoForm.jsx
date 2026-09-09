@@ -5,11 +5,12 @@ import { abrirDB, guardar, obtenerPorId } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { navegarA } from '../../enrutador.js';
+import { GaleriaFotos } from '../../comun/GaleriaFotos.jsx';
 
 const CATEGORIAS = [['VELA', 'Vela'], ['RECIPIENTE', 'Recipiente'], ['REPOSICION', 'Reposición']];
 const NUMERICOS = ['ceraAltoPF', 'ceraBajoPF', 'pabilo', 'yeso', 'minutosManoObra', 'recipienteCosto', 'recipienteCantidad'];
 
-const VACIO = { codigo: '', nombre: '', categoria: 'VELA', ceraAltoPF: 0, ceraBajoPF: 0, pabilo: 0, yeso: 0, minutosManoObra: 0, recipienteCosto: 0, recipienteCantidad: 0, heredaCostoDe: null, extras: [], activo: true };
+const VACIO = { codigo: '', nombre: '', categoria: 'VELA', ceraAltoPF: 0, ceraBajoPF: 0, pabilo: 0, yeso: 0, minutosManoObra: 0, recipienteCosto: 0, recipienteCantidad: 0, heredaCostoDe: null, extras: [], fotos: [], activo: true };
 
 export function ProductoForm({ id = null }) {
   const editando = Boolean(id);
@@ -57,6 +58,7 @@ export function ProductoForm({ id = null }) {
         <label class="campo-entrada"><span>Recipiente (cantidad)</span><input type="number" min="0" value={form.recipienteCantidad} onInput={(e) => cambiar('recipienteCantidad', e.currentTarget.value)} /></label>
         <label class="campo-entrada"><span>Mano de obra (minutos)</span><input type="number" min="0" value={form.minutosManoObra} onInput={(e) => cambiar('minutosManoObra', e.currentTarget.value)} /></label>
       </div>
+      <GaleriaFotos fotos={form.fotos} cambiar={(fotos) => setForm((actual) => ({ ...actual, fotos }))} />
       {error && <p class="aviso">{error}</p>}
       <button type="button" class="boton-primario" disabled={guardando} onClick={guardarProducto}>Guardar producto</button>
     </section>

@@ -5,6 +5,7 @@ import { abrirDB, guardar, obtenerPorId, obtenerTodos } from '../../../persisten
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { navegarA } from '../../enrutador.js';
+import { GaleriaFotos } from '../../comun/GaleriaFotos.jsx';
 
 function nuevoId(combos) {
   const mayor = combos.reduce((maximo, combo) => Math.max(maximo, Number(combo.id) || 0), 0);
@@ -13,7 +14,7 @@ function nuevoId(combos) {
 
 export function ComboForm({ id = null }) {
   const editando = Boolean(id);
-  const [form, setForm] = useState({ id: id ?? '', nombre: 'vela aromatica', lineas: [] });
+  const [form, setForm] = useState({ id: id ?? '', nombre: 'vela aromatica', lineas: [], fotos: [] });
   const [opciones, setOpciones] = useState([]);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -28,7 +29,7 @@ export function ComboForm({ id = null }) {
         setOpciones([...productos.map((item) => ({ ...item, tipo: 'PRODUCTO', etiqueta: `${item.nombre} (${item.codigo})` })), ...insumos.map((item) => ({ ...item, tipo: 'INSUMO', etiqueta: `${item.nombre} (${item.codigo})` }))]);
         if (id) {
           const combo = combos.find((item) => item.id === id);
-          if (combo) setForm({ id: combo.id, nombre: combo.nombre, lineas: combo.lineas });
+          if (combo) setForm({ id: combo.id, nombre: combo.nombre, lineas: combo.lineas, fotos: combo.fotos ?? [] });
         } else setForm((actual) => ({ ...actual, id: nuevoId(combos) }));
       } catch (e) { if (activo) setError(e.message); }
     }
@@ -49,7 +50,7 @@ export function ComboForm({ id = null }) {
     setGuardando(true); setError(null);
     try {
       const db = await abrirDB();
-      await guardar(db, TIENDAS.COMBOS, { id: form.id, nombre: form.nombre.trim(), activo: true, lineas: form.lineas });
+      await guardar(db, TIENDAS.COMBOS, { id: form.id, nombre: form.nombre.trim(), activo: true, lineas: form.lineas, fotos: form.fotos });
       invalidarCatalogo(); navegarA('productos');
     } catch (e) { setError(e.message); } finally { setGuardando(false); }
   }
@@ -68,6 +69,7 @@ export function ComboForm({ id = null }) {
           </div>
         ))}
       </div>
+      <GaleriaFotos fotos={form.fotos} cambiar={(fotos) => setForm((actual) => ({ ...actual, fotos }))} />
       <button type="button" class="boton-secundario" onClick={agregarLinea}>Agregar componente</button>
       {error && <p class="aviso">{error}</p>}
       <button type="button" class="boton-primario" disabled={guardando} onClick={guardarCombo}>Guardar combo</button>
