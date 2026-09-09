@@ -74,7 +74,7 @@ export function GaleriaFotos({ fotos = [], cambiar }) {
       {ampliada && (
         <div class="galeria-fotos__visor" role="dialog" aria-modal="true" aria-label="Vista ampliada" onClick={() => setAmpliada(null)}>
           <button type="button" class="galeria-fotos__cerrar" onClick={() => setAmpliada(null)} aria-label="Cerrar vista ampliada">×</button>
-          <img src={ampliada} alt="Vista ampliada" onClick={(evento) => evento.stopPropagation()} />
+          <img src={ampliada} alt="Vista ampliada" />
         </div>
       )}
     </section>
@@ -95,7 +95,7 @@ export function VisorFotos({ fotos = [] }) {
       {ampliada && (
         <div class="galeria-fotos__visor" role="dialog" aria-modal="true" aria-label="Vista ampliada" onClick={() => setAmpliada(null)}>
           <button type="button" class="galeria-fotos__cerrar" onClick={() => setAmpliada(null)} aria-label="Cerrar vista ampliada">×</button>
-          <img src={ampliada} alt="Vista ampliada" onClick={(evento) => evento.stopPropagation()} />
+          <img src={ampliada} alt="Vista ampliada" />
         </div>
       )}
     </div>

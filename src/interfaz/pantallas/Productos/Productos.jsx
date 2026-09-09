@@ -7,6 +7,7 @@ import { TIENDAS } from '../../../persistencia/esquema.js';
 import { obtenerCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
 import { formatearImporte, formatearCostoUnitario } from '../../../config/formato.js';
+import { VisorFotos } from '../../comun/GaleriaFotos.jsx';
 
 const SOLAPAS = [
   { id: 'combos', etiqueta: 'Combos' },
@@ -64,6 +65,7 @@ function FilaProducto({ producto }) {
           <span class="texto-cuerpo-s fila-lista__costo">costo {formatearImporte(producto.costoProduccion)}</span>
         </div>
       </button>
+      <VisorFotos fotos={producto.fotos} />
     </li>
   );
 }
@@ -114,6 +116,7 @@ function ListaCombos({ combos, productosPorId, insumosPorId, busqueda }) {
           </div>
           <span class="importe">{formatearImporte(combo.precioCombo)}</span>
           </button>
+          <VisorFotos fotos={combo.fotos} />
         </li>
       ))}
       {visibles.length === 0 && <li class="texto-cuerpo-s lista-vacia">No encontramos combos con esa búsqueda.</li>}
