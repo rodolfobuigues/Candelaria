@@ -6,17 +6,30 @@ import { App } from './App.jsx';
 import '../estilos/tokens.css';
 import '../estilos/componentes.css';
 
-// Import dinámico detrás de import.meta.env.DEV: en un build de producción
-// (`vite build`, modo 'production') queda estáticamente en `false`, así que
-// esta rama entera —y el chunk de siembraFixtures.js con las fixtures
-// adentro— se elimina del bundle (verificado en dist/, ver ESTADO.md).
-if (import.meta.env.DEV) {
-  const [{ sembrarFixtures }, { abrirDB }] = await Promise.all([
+// La primera apertura de la aplicación publicada carga automáticamente la
+// fuente vigente del 18/08/26 si IndexedDB está completamente vacía. Luego
+// no vuelve a sembrar ni sobrescribe los cambios del creador.
+async function cargarFuenteInicialSiHaceFalta() {
+  const [{ sembrarFixtures }, { abrirDB, obtenerTodos }, { TIENDAS }] = await Promise.all([
     import('../desarrollo/siembraFixtures.js'),
     import('../persistencia/db.js'),
+    import('../persistencia/esquema.js'),
   ]);
   const db = await abrirDB();
-  await sembrarFixtures(db);
+  const [insumos, productos, combos] = await Promise.all([
+    obtenerTodos(db, TIENDAS.INSUMOS),
+    obtenerTodos(db, TIENDAS.PRODUCTOS),
+    obtenerTodos(db, TIENDAS.COMBOS),
+  ]);
+  if (insumos.length === 0 && productos.length === 0 && combos.length === 0) {
+    await sembrarFixtures(db);
+  }
+}
+
+try {
+  await cargarFuenteInicialSiHaceFalta();
+} catch (error) {
+  console.error('No se pudo cargar la fuente inicial de Candelaria.', error);
 }
 
 render(<App />, document.getElementById('app'));
