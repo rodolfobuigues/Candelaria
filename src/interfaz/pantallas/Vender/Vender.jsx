@@ -10,6 +10,7 @@ import { obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
 import { formatearImporte } from '../../../config/formato.js';
 import { redondearPrecioVenta } from '../../../config/precios.js';
 import { navegarA } from '../../enrutador.js';
+import { VisorFotos } from '../../comun/GaleriaFotos.jsx';
 
 const FILTROS = [
   { id: 'TODOS', etiqueta: 'Todos' },
@@ -50,6 +51,7 @@ function construirArticulos(catalogo, insumos) {
     nombre: producto.nombre,
     codigo: producto.codigo,
     precio: producto.precio,
+    fotos: producto.fotos ?? [],
   }));
   const combos = catalogo.combos.map((combo) => ({
     id: combo.id,
@@ -59,6 +61,7 @@ function construirArticulos(catalogo, insumos) {
     codigo: combo.id,
     precio: combo.precioCombo,
     descripcion: describirCombo(combo, productosPorId, insumosPorId),
+    fotos: combo.fotos ?? [],
   }));
   return [...combos, ...productos];
 }
@@ -70,6 +73,7 @@ function Articulo({ articulo, agregar }) {
         <strong class="nombre-truncado">{articulo.nombre}</strong>
         {articulo.tipo !== 'COMBO' && <span class="texto-cuerpo-s fila-lista__codigo">{articulo.codigo}</span>}
         {articulo.descripcion && <span class="texto-cuerpo-s vender-articulo__descripcion">{articulo.descripcion}</span>}
+        <VisorFotos fotos={articulo.fotos} />
       </div>
       <span class="importe vender-articulo__precio">{formatearImporte(articulo.precio)}</span>
       <button

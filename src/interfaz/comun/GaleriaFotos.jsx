@@ -80,3 +80,24 @@ export function GaleriaFotos({ fotos = [], cambiar }) {
     </section>
   );
 }
+
+export function VisorFotos({ fotos = [] }) {
+  const [ampliada, setAmpliada] = useState(null);
+  if (fotos.length === 0) return null;
+
+  return (
+    <div class="visor-fotos-catalogo" aria-label="Fotos del producto o combo">
+      {fotos.map((foto, indice) => (
+        <button type="button" class="visor-fotos-catalogo__miniatura" key={`${foto.slice(0, 24)}-${indice}`} onClick={() => setAmpliada(foto)} aria-label={`Ampliar foto ${indice + 1}`}>
+          <img src={foto} alt={`Foto ${indice + 1}`} />
+        </button>
+      ))}
+      {ampliada && (
+        <div class="galeria-fotos__visor" role="dialog" aria-modal="true" aria-label="Vista ampliada" onClick={() => setAmpliada(null)}>
+          <button type="button" class="galeria-fotos__cerrar" onClick={() => setAmpliada(null)} aria-label="Cerrar vista ampliada">×</button>
+          <img src={ampliada} alt="Vista ampliada" onClick={(evento) => evento.stopPropagation()} />
+        </div>
+      )}
+    </div>
+  );
+}

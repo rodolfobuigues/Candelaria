@@ -432,6 +432,29 @@ h1, h2, h3 {
   color: var(--color-on-surface-variant);
 }
 
+.visor-fotos-catalogo {
+  display: flex;
+  gap: var(--esp-stack-s);
+  margin-top: var(--esp-stack-s);
+}
+
+.visor-fotos-catalogo__miniatura {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-outline-variant);
+  border-radius: var(--radio-m);
+  background: var(--color-surface-container-lowest);
+  cursor: zoom-in;
+}
+
+.visor-fotos-catalogo__miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .vender-articulo__agregar {
   flex: 0 0 var(--toque-min);
   width: var(--toque-min);
