@@ -22,5 +22,5 @@ if (import.meta.env.DEV) {
 render(<App />, document.getElementById('app'));
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/candelaria/sw.js');
+  navigator.serviceWorker.register('/Candelaria/sw.js');
 }

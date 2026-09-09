@@ -1,5 +1,5 @@
-const CACHE = 'candelaria-v1';
-const BASE = '/candelaria/';
+const CACHE = 'candelaria-v2';
+const BASE = '/Candelaria/';
 
 self.addEventListener('install', (evento) => {
   evento.waitUntil(caches.open(CACHE).then((cache) => cache.add(BASE)));

@@ -1,4 +1,4 @@
-// CLAUDE.md: PWA sin backend, host GitHub Pages con base '/candelaria/'
+// CLAUDE.md: PWA sin backend, host GitHub Pages con base '/Candelaria/'
 // (ESPECIFICACION.md § 2). Transform JSX clásico (jsxFactory/jsxFragment),
 // no el runtime automático: en Vite 8 (Rolldown) el runtime automático
 // resuelve react/jsx-dev-runtime en el escaneo de dependencias del
@@ -10,7 +10,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/candelaria/',
+  base: '/Candelaria/',
   esbuild: {
     jsx: 'transform',
     jsxFactory: 'h',
