@@ -5,6 +5,7 @@ import { abrirDB, guardar, eliminarTodo } from './db.js';
 import { obtenerCatalogo, invalidarCatalogo } from './catalogoRepo.js';
 import { TIENDAS } from './esquema.js';
 import { PARAMETROS_INICIALES } from '../config/parametros.js';
+import { redondearPrecioVenta } from '../config/precios.js';
 
 const TOLERANCIA = 0.01;
 function cercano(actual, esperado, mensaje) {
@@ -61,7 +62,7 @@ describe('catalogoRepo — coincide con el motor', () => {
     cercano(v1.materiales, 1869.8533333333335, 'materiales');
     cercano(v1.subtotal, 7119.8533333333335, 'subtotal');
     cercano(v1.costoProduccion, 7700, 'costo de producción');
-    cercano(v1.precio, 10395, 'precio');
+    cercano(v1.precio, redondearPrecioVenta(10395), 'precio');
   });
 
   test('el combo suma costoProduccion del producto (con factorGastos) más el insumo suelto (sin factorGastos)', async () => {
@@ -89,7 +90,7 @@ describe('catalogoRepo — memoización', () => {
     assert.notStrictEqual(original, recalculado, 'debe ser un objeto nuevo: el catálogo se reconstruyó');
     const v1 = recalculado.productos.find((p) => p.id === 'V1');
     cercano(v1.costoProduccion, 7700, 'el costo de producción no cambia con el beneficio');
-    cercano(v1.precio, 7700 * 1.4, 'el precio debe reflejar el nuevo beneficio');
+    cercano(v1.precio, redondearPrecioVenta(7700 * 1.4), 'el precio debe reflejar el nuevo beneficio');
   });
 
   test('cambiar un insumo requiere invalidarCatalogo() explícito — no se detecta solo', async () => {

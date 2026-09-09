@@ -9,6 +9,7 @@ import {
   resolverRecipienteCosto,
 } from './calculo.js';
 import { PARAMETROS_INICIALES } from '../config/parametros.js';
+import { redondearPrecioVenta } from '../config/precios.js';
 
 describe('techoMultiplo', () => {
   test('redondea hacia arriba al múltiplo', () => {
@@ -52,7 +53,7 @@ describe('calcularCostoProducto — caso de referencia V1 Pino chico (§ 8)', ()
     assert.ok(Math.abs(r.materiales - 1869.85) < 0.01);
     assert.ok(Math.abs(r.subtotal - 7119.85) < 0.01);
     assert.equal(r.costoProduccion, 7700);
-    assert.equal(r.precio, 10395);
+    assert.equal(r.precio, redondearPrecioVenta(10395));
   });
 
   test('las cantidades derivadas de la cera se anulan si no hay cera', () => {

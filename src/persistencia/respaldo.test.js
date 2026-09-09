@@ -31,7 +31,7 @@ describe('respaldo.js — exportación e importación', () => {
       id: 'ped1',
       numero: 1,
       clienteNombre: 'Mara',
-      lineas: [{ tipo: 'PRODUCTO', refId: 'V1', nombreCongelado: 'Pino chico', precioOriginal: 10395, precioAplicado: 10395, cantidad: 1 }],
+      lineas: [{ tipo: 'PRODUCTO', refId: 'V1', nombreCongelado: 'Pino chico', precioOriginal: 10400, precioAplicado: 10400, cantidad: 1 }],
       pagos: [{ id: 'pago-1', fecha: '2026-07-20T10:00:00.000Z', monto: 5000, medio: 'EFECTIVO', nota: '', anulado: false, fechaAnulacion: null }],
       historial: [],
     });
@@ -39,9 +39,9 @@ describe('respaldo.js — exportación e importación', () => {
     const respaldo = await exportarRespaldo(db);
     // listarPedidos() derivó total/pagado/saldo/estadoCobro al exportar:
     // el respaldo los trae, aunque IndexedDB nunca los tuvo guardados.
-    assert.equal(respaldo.pedidos[0].total, 10395);
+    assert.equal(respaldo.pedidos[0].total, 10400);
     assert.equal(respaldo.pedidos[0].pagado, 5000);
-    assert.equal(respaldo.pedidos[0].saldo, 5395);
+    assert.equal(respaldo.pedidos[0].saldo, 5400);
     assert.equal(respaldo.pedidos[0].estadoCobro, 'SEÑADO');
 
     // El registro guardado en IndexedDB, en cambio, nunca tuvo esos campos.

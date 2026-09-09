@@ -2,6 +2,8 @@
 // Funciones puras: no tocan IndexedDB ni la interfaz. Todo lo que necesitan
 // entra por parámetro; nada se resuelve acá contra un catálogo.
 
+import { redondearPrecioVenta } from '../config/precios.js';
+
 export function techoMultiplo(valor, multiplo) {
   return Math.ceil(valor / multiplo) * multiplo;
 }
@@ -78,8 +80,7 @@ export function calcularCostoProducto(producto, costosInsumos, parametros) {
   const subtotal = materiales + manoObra;
 
   const costoProduccion = techoMultiplo(subtotal * factorGastos, redondeo);
-  // El precio de un producto NO se redondea después de aplicar el beneficio.
-  const precio = costoProduccion * (1 + beneficio);
+  const precio = redondearPrecioVenta(costoProduccion * (1 + beneficio));
 
   return {
     ceraTotal,
@@ -112,14 +113,13 @@ export function calcularCostoProducto(producto, costosInsumos, parametros) {
  * (ESPECIFICACION.md § 4.2) y no se "corrigen" acá.
  */
 export function calcularCostoCombo(lineas, parametros) {
-  const { beneficio, redondeo } = parametros;
+  const { beneficio } = parametros;
 
   const costoCombo = lineas.reduce(
     (acumulado, linea) => acumulado + linea.costoUnit * linea.cantidad,
     0
   );
-  // A diferencia del producto, el precio del combo sí se redondea al múltiplo.
-  const precioCombo = techoMultiplo(costoCombo * (1 + beneficio), redondeo);
+  const precioCombo = redondearPrecioVenta(costoCombo * (1 + beneficio));
 
   return { costoCombo, precioCombo };
 }

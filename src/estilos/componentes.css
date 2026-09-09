@@ -950,7 +950,8 @@ h1, h2, h3 {
   position: fixed;
   left: var(--esp-pantalla);
   right: var(--esp-pantalla);
-  bottom: var(--esp-elemento);
+  bottom: calc(var(--relleno-lista-inferior) + var(--esp-elemento));
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;

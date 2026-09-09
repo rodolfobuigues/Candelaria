@@ -15,7 +15,7 @@ function pedidoDeEjemplo() {
     fecha: '2026-07-20T10:00:00.000Z',
     clienteNombre: 'Mara',
     clienteTelefono: '+54 9 11 5555-5555',
-    lineas: [{ tipo: 'PRODUCTO', refId: 'V1', nombreCongelado: 'Pino chico', precioOriginal: 39440, precioAplicado: 39440, cantidad: 1 }],
+    lineas: [{ tipo: 'PRODUCTO', refId: 'V1', nombreCongelado: 'Pino chico', precioOriginal: 39500, precioAplicado: 39500, cantidad: 1 }],
   });
 }
 
@@ -37,7 +37,7 @@ describe('crearPedido — no persiste derivados', () => {
 describe('criterio 11 — seña y saldo', () => {
   test('una seña deja el pedido SEÑADO con el saldo correcto', () => {
     const pedido = pedidoDeEjemplo();
-    assert.equal(calcularDerivados(pedido).total, 39440);
+    assert.equal(calcularDerivados(pedido).total, 39500);
 
     const conSeña = registrarPago(pedido, {
       id: 'pago-1',
@@ -48,7 +48,7 @@ describe('criterio 11 — seña y saldo', () => {
 
     const derivados = calcularDerivados(conSeña);
     assert.equal(derivados.estadoCobro, 'SEÑADO');
-    assert.equal(derivados.saldo, 24440);
+    assert.equal(derivados.saldo, 24500);
     assert.equal(derivados.pagado, 15000);
   });
 
@@ -64,14 +64,14 @@ describe('criterio 11 — seña y saldo', () => {
     const pagado = registrarPago(conSeña, {
       id: 'pago-2',
       fecha: '2026-07-21T09:00:00.000Z',
-      monto: 24440,
+      monto: 24500,
       medio: 'TRANSFERENCIA',
     });
 
     const derivados = calcularDerivados(pagado);
     assert.equal(derivados.estadoCobro, 'PAGADO');
     assert.equal(derivados.saldo, 0);
-    assert.equal(derivados.pagado, 39440);
+    assert.equal(derivados.pagado, 39500);
   });
 });
 
@@ -91,14 +91,14 @@ describe('criterio 12 — rechazo de pago mayor al saldo', () => {
         registrarPago(conSeña, {
           id: 'pago-2',
           fecha: '2026-07-21T09:00:00.000Z',
-          monto: 24441,
+          monto: 24501,
           medio: 'EFECTIVO',
         }),
       /supera el saldo pendiente/
     );
 
     // El rechazo no debe haber tocado el pedido original.
-    assert.equal(calcularDerivados(conSeña).saldo, 24440);
+    assert.equal(calcularDerivados(conSeña).saldo, 24500);
     assert.equal(conSeña.pagos.length, 1);
   });
 
@@ -116,7 +116,7 @@ describe('criterio 13 — historial completo con fechas', () => {
   test('el historial contiene creación, los dos pagos y la entrega, en orden', () => {
     let pedido = pedidoDeEjemplo();
     pedido = registrarPago(pedido, { id: 'pago-1', fecha: '2026-07-20T10:05:00.000Z', monto: 15000, medio: 'EFECTIVO' });
-    pedido = registrarPago(pedido, { id: 'pago-2', fecha: '2026-07-21T09:00:00.000Z', monto: 24440, medio: 'TRANSFERENCIA' });
+    pedido = registrarPago(pedido, { id: 'pago-2', fecha: '2026-07-21T09:00:00.000Z', monto: 24500, medio: 'TRANSFERENCIA' });
     pedido = marcarEntregado(pedido, '2026-07-21T18:00:00.000Z');
 
     assert.deepEqual(
@@ -145,12 +145,12 @@ describe('criterio 14 — anulación de pago', () => {
   test('anular un pago recalcula el saldo y lo deja visible como anulado', () => {
     let pedido = pedidoDeEjemplo();
     pedido = registrarPago(pedido, { id: 'pago-1', fecha: '2026-07-20T10:05:00.000Z', monto: 15000, medio: 'EFECTIVO' });
-    assert.equal(calcularDerivados(pedido).saldo, 24440);
+    assert.equal(calcularDerivados(pedido).saldo, 24500);
 
     const conAnulacion = anularPago(pedido, 'pago-1', '2026-07-20T12:00:00.000Z');
 
     const derivados = calcularDerivados(conAnulacion);
-    assert.equal(derivados.saldo, 39440);
+    assert.equal(derivados.saldo, 39500);
     assert.equal(derivados.pagado, 0);
     assert.equal(derivados.estadoCobro, 'IMPAGO');
 
@@ -183,6 +183,6 @@ describe('calcularDerivados', () => {
     const derivados = calcularDerivados(pedido);
     assert.equal(derivados.estadoCobro, 'IMPAGO');
     assert.equal(derivados.pagado, 0);
-    assert.equal(derivados.saldo, 39440);
+    assert.equal(derivados.saldo, 39500);
   });
 });

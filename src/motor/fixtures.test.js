@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import { calcularCostoProducto, calcularCostoCombo } from './calculo.js';
 import { PARAMETROS_INICIALES } from '../config/parametros.js';
+import { redondearPrecioVenta } from '../config/precios.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TOLERANCIA = 0.01;
@@ -110,7 +111,7 @@ describe('fixtures_productos.csv — calcularCostoProducto', () => {
       cercano(r.materiales, numero(fila.esp_materiales), 'materiales');
       cercano(r.subtotal, numero(fila.esp_subtotal), 'subtotal');
       cercano(r.costoProduccion, numero(fila.esp_costo_prod), 'costo de producción');
-      cercano(r.precio, numero(fila.esp_precio), 'precio');
+      cercano(r.precio, redondearPrecioVenta(numero(fila.esp_precio)), 'precio');
     });
   }
 
@@ -144,7 +145,7 @@ describe('fixtures_productos.csv — calcularCostoProducto', () => {
       );
       cercano(
         recalculado.precio,
-        recalculado.costoProduccion * 1.4,
+        redondearPrecioVenta(recalculado.costoProduccion * 1.4),
         `${fila.codigo} precio debe reflejar el nuevo beneficio`
       );
     }

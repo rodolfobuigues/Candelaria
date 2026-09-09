@@ -9,9 +9,10 @@
 // llama calcularDerivados(pedido) — es la misma función que usa la capa
 // de lectura (pedidosRepo.js) para no persistirlos nunca en IndexedDB y
 // evitar que se desincronicen de `lineas`/`pagos`.
+import { redondearPrecioVenta } from '../config/precios.js';
 
 function calcularTotal(lineas) {
-  return lineas.reduce((acumulado, linea) => acumulado + linea.precioAplicado * linea.cantidad, 0);
+  return redondearPrecioVenta(lineas.reduce((acumulado, linea) => acumulado + linea.precioAplicado * linea.cantidad, 0));
 }
 
 function calcularPagado(pagos) {

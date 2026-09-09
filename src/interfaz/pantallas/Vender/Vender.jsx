@@ -8,6 +8,7 @@ import { guardarPedido, listarPedidos } from '../../../persistencia/pedidosRepo.
 import { crearPedido } from '../../../persistencia/pedidoLogica.js';
 import { obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
 import { formatearImporte } from '../../../config/formato.js';
+import { redondearPrecioVenta } from '../../../config/precios.js';
 import { navegarA } from '../../enrutador.js';
 
 const FILTROS = [
@@ -67,7 +68,7 @@ function Articulo({ articulo, agregar }) {
     <li class="fila-lista vender-articulo">
       <div class="fila-lista__contenido">
         <strong class="nombre-truncado">{articulo.nombre}</strong>
-        <span class="texto-cuerpo-s fila-lista__codigo">{articulo.codigo}</span>
+        {articulo.tipo !== 'COMBO' && <span class="texto-cuerpo-s fila-lista__codigo">{articulo.codigo}</span>}
         {articulo.descripcion && <span class="texto-cuerpo-s vender-articulo__descripcion">{articulo.descripcion}</span>}
       </div>
       <span class="importe vender-articulo__precio">{formatearImporte(articulo.precio)}</span>
@@ -204,12 +205,12 @@ export function Vender() {
     const texto = normalizar(busqueda);
     return datos.articulos.filter((articulo) => {
       const coincideFiltro = filtro === 'TODOS' || articulo.categoria === filtro;
-      const coincideBusqueda = !texto || normalizar(`${articulo.nombre} ${articulo.codigo}`).includes(texto);
+      const coincideBusqueda = !texto || normalizar(`${articulo.nombre} ${articulo.codigo} ${articulo.descripcion ?? ''}`).includes(texto);
       return coincideFiltro && coincideBusqueda;
     });
   }, [datos, filtro, busqueda]);
 
-  const total = lineas.reduce((suma, linea) => suma + linea.precioAplicado * linea.cantidad, 0);
+  const total = redondearPrecioVenta(lineas.reduce((suma, linea) => suma + linea.precioAplicado * linea.cantidad, 0));
 
   function agregar(articulo) {
     setConfirmacion(null);
@@ -238,8 +239,8 @@ export function Vender() {
   }
 
   function cambiarPrecio(refId, valor) {
-    const precio = Number(valor);
-    if (!Number.isFinite(precio) || precio < 0) return;
+    const precio = redondearPrecioVenta(valor);
+    if (precio < 0) return;
     setLineas((actuales) => actuales.map((linea) => linea.refId === refId ? { ...linea, precioAplicado: precio } : linea));
   }
 

@@ -25,10 +25,10 @@ function pedidoConSeña() {
     numero: 1,
     fecha: '2026-07-20T10:00:00.000Z',
     clienteNombre: 'Mara',
-    lineas: [{ tipo: 'PRODUCTO', refId: 'V1', nombreCongelado: 'Pino chico', precioOriginal: 39440, precioAplicado: 39440, cantidad: 1 }],
+    lineas: [{ tipo: 'PRODUCTO', refId: 'V1', nombreCongelado: 'Pino chico', precioOriginal: 39500, precioAplicado: 39500, cantidad: 1 }],
   });
   pedido = registrarPago(pedido, { id: 'pago-1', fecha: '2026-07-20T10:05:00.000Z', monto: 15000, medio: 'EFECTIVO' });
-  return pedido; // total 39440, pagado 15000, saldo 24440, SEÑADO
+  return pedido; // total 39500, pagado 15000, saldo 24500, SEÑADO
 }
 
 describe('pedidosRepo — derivados reales, nunca persistidos', () => {
@@ -47,15 +47,15 @@ describe('pedidosRepo — derivados reales, nunca persistidos', () => {
     });
 
     const leidoPorId = await obtenerPedido(db, 'ped1');
-    assert.equal(leidoPorId.total, 39440);
+    assert.equal(leidoPorId.total, 39500);
     assert.equal(leidoPorId.pagado, 15000);
-    assert.equal(leidoPorId.saldo, 24440);
+    assert.equal(leidoPorId.saldo, 24500);
     assert.equal(leidoPorId.estadoCobro, 'SEÑADO');
 
     const [leidoEnLista] = await listarPedidos(db);
-    assert.equal(leidoEnLista.total, 39440);
+    assert.equal(leidoEnLista.total, 39500);
     assert.equal(leidoEnLista.pagado, 15000);
-    assert.equal(leidoEnLista.saldo, 24440);
+    assert.equal(leidoEnLista.saldo, 24500);
     assert.equal(leidoEnLista.estadoCobro, 'SEÑADO');
   });
 
@@ -73,7 +73,7 @@ describe('pedidosRepo — derivados reales, nunca persistidos', () => {
     // Pero al leerlo con la capa de lectura, los derivados vuelven a estar,
     // calculados de verdad a partir de lineas/pagos.
     const leido = await obtenerPedido(db, 'ped1');
-    assert.equal(leido.saldo, 24440);
+    assert.equal(leido.saldo, 24500);
     assert.equal(leido.estadoCobro, 'SEÑADO');
   });
 
