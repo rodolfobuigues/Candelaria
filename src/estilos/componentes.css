@@ -77,6 +77,22 @@ h1, h2, h3 {
   padding: 0 var(--esp-pantalla);
 }
 
+.auth-pantalla {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--esp-pantalla);
+}
+
+.auth-tarjeta {
+  width: min(100%, 420px);
+}
+
+.auth-tarjeta h1,
+.auth-tarjeta p {
+  margin-top: 0;
+}
+
 /* === Pantalla Productos === */
 
 .productos-pantalla {
