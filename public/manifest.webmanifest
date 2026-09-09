@@ -1,0 +1,11 @@
+{
+  "name": "Candelaria",
+  "short_name": "Candelaria",
+  "lang": "es-AR",
+  "start_url": "/candelaria/",
+  "scope": "/candelaria/",
+  "display": "standalone",
+  "background_color": "#f8f6f1",
+  "theme_color": "#6d4c41",
+  "icons": []
+}

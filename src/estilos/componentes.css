@@ -77,6 +77,155 @@ h1, h2, h3 {
   padding: 0 var(--esp-pantalla);
 }
 
+/* === Pantalla Productos === */
+
+.productos-pantalla {
+  padding-bottom: var(--relleno-lista-inferior);
+}
+
+.productos-buscador {
+  margin: var(--esp-elemento) 0;
+}
+
+.lista-seccion + .lista-seccion {
+  margin-top: var(--esp-seccion);
+}
+
+.lista-seccion__titulo {
+  margin: 0 0 var(--esp-stack-m);
+  color: var(--color-on-surface-variant);
+}
+
+.lista-seccion__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fila-lista__contenido {
+  min-width: 0;
+  flex: 1;
+}
+
+.fila-lista__contenido strong {
+  display: block;
+}
+
+.fila-lista__codigo,
+.fila-lista__costo {
+  display: block;
+  color: var(--color-on-surface-variant);
+}
+
+.fila-lista__importes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: var(--esp-stack-s);
+}
+
+.fila-lista__importes .importe {
+  color: var(--color-primary);
+}
+
+.fila-lista--interactiva {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fila-lista--interactiva:active {
+  background: var(--color-surface-container);
+}
+
+.lista-vacia {
+  padding: var(--esp-elemento) 0;
+  color: var(--color-on-surface-variant);
+}
+
+/* === Ficha de producto === */
+
+.ficha-producto__identidad {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-stack-m);
+  margin-bottom: var(--esp-seccion);
+}
+
+.ficha-producto__identidad h2 {
+  margin: 0;
+}
+
+.ficha-producto__precio {
+  color: var(--color-primary);
+}
+
+.ficha-seccion {
+  margin-bottom: var(--esp-seccion);
+}
+
+.ficha-seccion h3 {
+  margin: 0;
+}
+
+.ficha-lista {
+  margin: var(--esp-elemento) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ficha-costos {
+  margin: var(--esp-elemento) 0 0;
+}
+
+.ficha-costos > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  padding: var(--esp-stack-m) 0;
+}
+
+.ficha-costos dt,
+.ficha-costos dd {
+  margin: 0;
+}
+
+.ficha-costos dd {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ficha-costos__total {
+  margin: var(--esp-stack-m) calc(-1 * var(--relleno-tarjeta));
+  padding: var(--esp-elemento) var(--relleno-tarjeta) !important;
+  background: var(--color-surface-container-high);
+  font-weight: 600;
+}
+
+.ficha-indicadores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-elemento);
+  margin-bottom: var(--esp-seccion);
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-stack-m);
+  min-width: 0;
+}
+
+.indicador strong {
+  font: var(--texto-precio);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* === Tarjeta === */
 
 .tarjeta {
@@ -97,6 +246,15 @@ h1, h2, h3 {
   width: 100%;
   min-height: var(--toque-min);
   border-radius: var(--radio-m);
+  font: 600 16px/1 var(--font-texto);
+  cursor: pointer;
+}
+
+.boton-barra {
+  min-height: var(--toque-min);
+  border: none;
+  background: transparent;
+  color: var(--color-inverse-on-surface);
   font: 600 16px/1 var(--font-texto);
   cursor: pointer;
 }
@@ -244,6 +402,466 @@ h1, h2, h3 {
   font-variant-numeric: tabular-nums;
 }
 
+/* === Pantalla Vender === */
+
+.vender-pantalla {
+  padding-bottom: var(--relleno-lista-inferior);
+}
+
+.vender-buscador {
+  margin-bottom: var(--esp-elemento);
+}
+
+.vender-filtros {
+  margin-bottom: var(--esp-elemento);
+}
+
+.vender-lista {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.vender-articulo__precio {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.vender-articulo__descripcion {
+  display: block;
+  color: var(--color-on-surface-variant);
+}
+
+.vender-articulo__agregar {
+  flex: 0 0 var(--toque-min);
+  width: var(--toque-min);
+  height: var(--toque-min);
+  border: none;
+  border-radius: var(--radio-pill);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font: 600 24px/1 var(--font-texto);
+  cursor: pointer;
+}
+
+.vender-pedido {
+  margin-bottom: var(--relleno-lista-inferior);
+}
+
+.vender-pedido__titulo,
+.pedido-linea__encabezado,
+.pedido-linea__controles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+}
+
+.vender-pedido__titulo {
+  margin-bottom: var(--esp-elemento);
+}
+
+.pedido-lineas {
+  margin: 0 0 var(--esp-seccion);
+  padding: 0;
+  list-style: none;
+}
+
+.pedido-linea {
+  padding: var(--esp-elemento) 0;
+  border-bottom: var(--borde-fino) solid var(--color-gold-subtle);
+}
+
+.pedido-linea__controles {
+  align-items: flex-end;
+  margin-top: var(--esp-elemento);
+}
+
+.pedido-linea__precio {
+  flex: 1;
+}
+
+.pedido-linea__precio input {
+  min-height: var(--toque-min);
+}
+
+.pedido-linea__diferencia {
+  display: block;
+  margin-top: var(--esp-stack-s);
+  color: var(--color-on-surface-variant);
+}
+
+.boton-texto {
+  min-height: var(--toque-min);
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font: 600 14px/1 var(--font-texto);
+  cursor: pointer;
+}
+
+.vender-datos-cliente {
+  display: grid;
+  gap: var(--esp-elemento);
+  margin-bottom: var(--esp-seccion);
+}
+
+.vender-datos-cliente textarea {
+  padding-top: var(--esp-stack-m);
+  padding-bottom: var(--esp-stack-m);
+}
+
+.vender-confirmacion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-stack-s);
+  margin-bottom: var(--esp-elemento);
+}
+
+/* === Ficha de pedido === */
+
+.pedido-pantalla {
+  padding-bottom: var(--relleno-lista-inferior);
+}
+
+.pedido-cliente {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  margin-bottom: var(--esp-seccion);
+}
+
+.pedido-cliente h2 {
+  margin-top: var(--esp-stack-s);
+}
+
+.pedido-telefono {
+  color: var(--color-primary);
+  font: var(--texto-cuerpo-s);
+  white-space: nowrap;
+}
+
+.pedido-nota {
+  margin: var(--esp-elemento) 0 var(--esp-stack-s);
+  white-space: pre-wrap;
+}
+
+.pedido-ficha-lineas,
+.pedido-pagos,
+.pedido-historial {
+  margin: var(--esp-elemento) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pedido-ficha-linea,
+.pedido-pagos li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  min-height: var(--alto-fila);
+  padding: var(--esp-stack-m) 0;
+  border-bottom: var(--borde-fino) solid var(--color-gold-subtle);
+}
+
+.pedido-ficha-linea__importe {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--esp-stack-s);
+  flex-shrink: 0;
+}
+
+.pedido-ficha-linea__importe del {
+  color: var(--color-on-surface-variant);
+  font: var(--texto-cuerpo-s);
+}
+
+.ajuste-chip {
+  padding: var(--esp-stack-s) var(--esp-stack-m);
+  border-radius: var(--radio-pill);
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  font: var(--texto-etiqueta);
+}
+
+.pedido-totales {
+  margin: var(--esp-elemento) 0 0;
+}
+
+.pedido-totales > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  padding: var(--esp-stack-m) 0;
+}
+
+.pedido-totales dt,
+.pedido-totales dd {
+  margin: 0;
+}
+
+.pedido-totales dd {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pedido-totales__saldo {
+  margin: var(--esp-stack-m) calc(-1 * var(--relleno-tarjeta));
+  padding: var(--esp-elemento) var(--relleno-tarjeta) !important;
+  background: var(--color-surface-container-high);
+  font-weight: 600;
+}
+
+.pedido-totales__saldo dd {
+  font: var(--texto-precio-l);
+}
+
+.pedido-pagos li:last-child,
+.pedido-ficha-linea:last-child {
+  border-bottom: none;
+}
+
+.pago-anulado {
+  text-decoration: line-through;
+  color: var(--color-on-surface-variant);
+}
+
+.pedido-historial {
+  border-left: var(--borde-fino) solid var(--color-gold-subtle);
+  padding-left: var(--esp-elemento);
+}
+
+.pedido-historial li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-stack-s);
+  padding: 0 0 var(--esp-elemento);
+}
+
+.pedido-pago-form {
+  display: grid;
+  gap: var(--esp-elemento);
+  margin-bottom: var(--esp-seccion);
+}
+
+.pedido-acciones {
+  display: grid;
+  gap: var(--esp-elemento);
+}
+
+/* === Mensaje generado === */
+
+.mensaje-pantalla {
+  padding-bottom: var(--relleno-lista-inferior);
+}
+
+.mensaje-tarjeta {
+  margin-bottom: var(--esp-seccion);
+}
+
+.mensaje-tarjeta__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  margin-bottom: var(--esp-elemento);
+}
+
+.mensaje-tarjeta__cabecera h2 {
+  margin-top: var(--esp-stack-s);
+}
+
+.mensaje-contenido {
+  margin: 0;
+  white-space: pre-wrap;
+  font: var(--texto-cuerpo);
+  color: var(--color-on-surface);
+}
+
+.mensaje-acciones {
+  display: grid;
+  gap: var(--esp-elemento);
+}
+
+.mensaje-acciones button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mensaje-ayuda {
+  margin-top: var(--esp-elemento);
+  text-align: center;
+}
+
+/* === Lista de pedidos === */
+
+.pedidos-pantalla {
+  padding-bottom: var(--relleno-lista-inferior);
+}
+
+.pedidos-filtros {
+  margin-bottom: var(--esp-seccion);
+}
+
+.pedidos-lista {
+  display: grid;
+  gap: var(--esp-elemento);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tarjeta-pedido {
+  position: relative;
+  width: 100%;
+  border: none;
+  color: var(--color-on-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tarjeta-pedido::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--esp-stack-m);
+  border-radius: var(--radio-xl) 0 0 var(--radio-xl);
+  background: var(--color-estado-pendiente);
+  content: '';
+}
+
+.tarjeta-pedido--entregado::before {
+  background: var(--color-estado-entregado);
+}
+
+.tarjeta-pedido__cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  padding-left: var(--esp-elemento);
+}
+
+.tarjeta-pedido__importe {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--esp-stack-s);
+  flex-shrink: 0;
+}
+
+.tarjeta-pedido__importe .importe {
+  color: var(--color-primary);
+}
+
+.tarjeta-pedido__estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-stack-m);
+  margin-top: var(--esp-elemento);
+  padding-left: var(--esp-elemento);
+}
+
+.pedidos-vacio {
+  padding: var(--esp-seccion) 0;
+  text-align: center;
+}
+
+.pedidos-vacio h2 {
+  margin-bottom: var(--esp-stack-m);
+}
+
+/* === Formularios de catálogo === */
+
+.formulario-pantalla {
+  display: grid;
+  gap: var(--esp-elemento);
+  padding-bottom: var(--relleno-lista-inferior);
+}
+
+.formulario-campos {
+  display: grid;
+  gap: var(--esp-elemento);
+}
+
+.formulario-subtitulo {
+  margin-top: var(--esp-stack-m);
+}
+
+.formulario-linea {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px auto;
+  align-items: center;
+  gap: var(--esp-stack-m);
+}
+
+.formulario-linea select,
+.formulario-linea input {
+  width: 100%;
+  min-height: var(--toque-min);
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-m);
+  background: var(--color-surface-container-low);
+  color: var(--color-on-surface);
+  font: var(--texto-cuerpo-s);
+  padding: 0 var(--esp-stack-m);
+}
+
+/* === Ajustes y plantillas === */
+
+.ajustes-pantalla,
+.plantilla-pantalla {
+  display: grid;
+  gap: var(--esp-seccion);
+  padding-bottom: var(--relleno-lista-inferior);
+}
+
+.ajustes-seccion {
+  display: grid;
+  gap: var(--esp-elemento);
+}
+
+.ajustes-campos {
+  display: grid;
+  gap: var(--esp-elemento);
+}
+
+.fila-ajuste {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--toque-min);
+  border: none;
+  border-bottom: var(--borde-fino) solid var(--color-gold-subtle);
+  background: none;
+  color: var(--color-on-surface);
+  font: var(--texto-cuerpo);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fila-ajuste--deshabilitado {
+  opacity: 0.55;
+}
+
+.fila-ajuste input[type="file"] {
+  max-width: 150px;
+  font: var(--texto-cuerpo-s);
+}
+
+.plantilla-marcadores {
+  gap: var(--esp-stack-m);
+}
+
+.plantilla-vista pre {
+  margin: var(--esp-elemento) 0 0;
+  white-space: pre-wrap;
+  font: var(--texto-cuerpo);
+}
+
 /* === Barra inferior === */
 
 .barra-inferior {
@@ -359,4 +977,3 @@ h1, h2, h3 {
   height: var(--icono);
   flex-shrink: 0;
 }
-

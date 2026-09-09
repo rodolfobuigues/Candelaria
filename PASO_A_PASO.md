@@ -26,7 +26,7 @@ C:\candelaria\
     fixtures_productos.csv
     fixtures_insumos.csv
     fixtures_combos.json
-    Velas_y_adornos_Candelaria_18-7-26.xlsx
+    Velas y adornos Candelaria 18-8-26.xlsx
 ```
 
 **Paso 3.** Iniciá control de versiones. **Esto no es opcional**: es lo que te
@@ -85,7 +85,7 @@ sin base de datos. Seguí la sección 4 de ESPECIFICACION.md.
 Después escribí los tests que lo validan contra fixtures_productos.csv,
 fixtures_insumos.csv y fixtures_combos.json, con tolerancia 0,01.
 
-Ejecutá los tests y no me contestes hasta que los 76 productos y los 2 combos
+Ejecutá los tests y no me contestes hasta que los 79 productos y los 21 combos
 pasen. Si alguno falla, corregí el motor, nunca las fixtures.
 ```
 
@@ -161,7 +161,7 @@ monitor. Anotá lo que no se lee y pedí el ajuste concreto: "el saldo se corta"
 ```
 Ahora el importador de la planilla, según la sección 7 de ESPECIFICACION.md.
 Aplicá las ocho reglas de limpieza. Importá el .xlsx de la carpeta y verificá
-que los 76 productos resultantes reproduzcan los valores de las fixtures.
+que los 79 productos resultantes reproduzcan los valores de las fixtures.
 Mostrame el listado de registros marcados para revisión.
 ```
 

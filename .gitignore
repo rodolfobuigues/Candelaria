@@ -3,3 +3,5 @@ dist/
 build/
 .env
 *.local
+.claude/settings.local.json
+.claude/skills/.claude/

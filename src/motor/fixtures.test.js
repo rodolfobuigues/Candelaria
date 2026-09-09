@@ -86,7 +86,7 @@ describe('fixtures_insumos.csv', () => {
   }
 });
 
-// --- Productos: los 76 del catálogo --------------------------------------
+// --- Productos: los 79 vigentes del catálogo ------------------------------
 
 const resultadosProducto = new Map();
 

@@ -1,6 +1,6 @@
 # Candelaria — Estado del proyecto
 
-**Actualizado: 23/07/2026**
+**Actualizado: 09/09/2026**
 
 Documento vivo. Se actualiza al cerrar cada fase. Es lo primero que hay que leer
 al abrir un chat nuevo.
@@ -13,10 +13,18 @@ al abrir un chat nuevo.
 |---|---|
 | Carpeta | `D:\Colo\Candelaria` |
 | Repositorio | git iniciado. Último commit registrado: `f28bbc0` (armazón de interfaz), más el commit del reporter `dot` |
-| Tests | **179 en verde**, 25 suites, 0 fallos |
-| Fase actual | **Fase 4 en curso.** Paso 11b (cimientos) cerrado |
-| Próximo paso | Pantalla 1 de 12: **Productos** (DISEÑO 8.5) |
-| Sin commitear | Nada pendiente |
+| Tests | **204 en verde**, 25 suites, 0 fallos |
+| Fase actual | **Fase 4 cerrada.** Las 12 pantallas de interfaz están construidas en código |
+| Próximo paso | Fase 5: **Importador y exportación Excel** |
+| Sin commitear | Cambios locales pendientes de revisión/commit |
+
+### Fuente de datos vigente
+
+La única fuente de datos inicial válida es `D:\Maira\App Velas\Velas y adornos Candelaria 18-8-26.xlsx`.
+Las fixtures del repositorio fueron regeneradas desde esa versión: 29 insumos,
+79 productos y 21 combos. Se excluyeron los combos vacíos 24 y 25 y los
+duplicados exactos 6 (igual al 4) y 22 (igual al 14). No se mezclaron datos de
+la planilla anterior.
 
 ---
 
@@ -26,11 +34,11 @@ al abrir un chat nuevo.
 |---|---|---|
 | 0 — Preparación | ✅ | Node 24.16, Claude Code 2.1.210, git, `.gitignore` |
 | 1 — Reglas y `CLAUDE.md` | ✅ | Resueltas 5 contradicciones entre documentos |
-| 2 — Motor de cálculo | ✅ | 76 productos, 26 insumos y 2 combos validados contra las fixtures |
+| 2 — Motor de cálculo | ✅ | 79 productos, 29 insumos y 21 combos vigentes validados contra las fixtures del Excel 18/08/2026 |
 | 3a — Persistencia | ✅ | IndexedDB, respaldo JSON, pagos e historial |
 | 3b — Tokens de estilo | ✅ | Tokens, componentes, fuentes locales y guardián con 4 tests de control |
-| 4 — Interfaz | 🔄 | **Cimientos ✅. 0 de 12 pantallas** |
-| 5 — Importador y Excel | ⬜ | Incluye "Revisar importación" (DISEÑO 8.10) |
+| 4 — Interfaz | ✅ | **Cimientos ✅. 12 de 12 pantallas** |
+| 5 — Importador y Excel | 🔄 | Respaldo JSON, CSV y lector inicial de planilla XLSX; falta previsualización y aplicación validada |
 | 6 — PWA publicada | ⬜ | GitHub Pages |
 | 7 — Datos reales | ⬜ | |
 
@@ -190,18 +198,18 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 
 | # | Pantalla | DISEÑO | Estado |
 |---|---|---|---|
-| 1 | Productos (tres solapas) | 8.5 | ⬜ |
-| 2 | Ficha de producto | 8.6 | ⬜ |
-| 3 | Vender | 8.1 | ⬜ |
-| 4 | Pedido (alta y ficha, dos estados) | 8.2 | ⬜ |
-| 5 | Mensaje generado | 8.3 | ⬜ |
-| 6 | Registro de pago | 8.11 | ⬜ |
-| 7 | Pedidos | 8.4 | ⬜ |
-| 8 | Alta y edición de insumo | 8.7 | ⬜ |
-| 9 | Alta y edición de producto con receta | 8.11 | ⬜ |
-| 10 | Alta y edición de combo | 8.11 | ⬜ |
-| 11 | Ajustes | 8.8 | ⬜ |
-| 12 | Editor de plantillas | 8.9 | ⬜ |
+| 1 | Productos (tres solapas) | 8.5 | ✅ |
+| 2 | Ficha de producto | 8.6 | ✅ |
+| 3 | Vender | 8.1 | ✅ |
+| 4 | Pedido (alta y ficha, dos estados) | 8.2 | ✅ |
+| 5 | Mensaje generado | 8.3 | ✅ |
+| 6 | Registro de pago | 8.11 | ✅ |
+| 7 | Pedidos | 8.4 | ✅ |
+| 8 | Alta y edición de insumo | 8.7 | ✅ |
+| 9 | Alta y edición de producto con receta | 8.11 | ✅ |
+| 10 | Alta y edición de combo | 8.11 | ✅ |
+| 11 | Ajustes | 8.8 | ✅ |
+| 12 | Editor de plantillas | 8.9 | ✅ |
 
 "Revisar importación" (8.10) se construye en la Fase 5, junto al importador.
 

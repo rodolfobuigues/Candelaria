@@ -6,8 +6,6 @@ import { App } from './App.jsx';
 import '../estilos/tokens.css';
 import '../estilos/componentes.css';
 
-render(<App />, document.getElementById('app'));
-
 // Import dinámico detrás de import.meta.env.DEV: en un build de producción
 // (`vite build`, modo 'production') queda estáticamente en `false`, así que
 // esta rama entera —y el chunk de siembraFixtures.js con las fixtures
@@ -19,4 +17,10 @@ if (import.meta.env.DEV) {
   ]);
   const db = await abrirDB();
   await sembrarFixtures(db);
+}
+
+render(<App />, document.getElementById('app'));
+
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/candelaria/sw.js');
 }

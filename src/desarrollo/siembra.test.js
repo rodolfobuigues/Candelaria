@@ -15,9 +15,9 @@ const textoProductos = readFileSync(path.join(RAIZ, 'fixtures_productos.csv'), '
 const jsonCombos = JSON.parse(readFileSync(path.join(RAIZ, 'fixtures_combos.json'), 'utf8'));
 
 describe('construirInsumos / construirProductos / construirCombos — funciones puras', () => {
-  test('26 insumos, con unidad traducida al enum de ESPECIFICACION § 3.1', () => {
+  test('29 insumos vigentes, con unidad traducida al enum de ESPECIFICACION § 3.1', () => {
     const insumos = construirInsumos(textoInsumos);
-    assert.equal(insumos.length, 26);
+    assert.equal(insumos.length, 29);
     const unidadesValidas = new Set(['g', 'kg', 'ml', 'l', 'unidad', 'hora']);
     for (const insumo of insumos) {
       assert.ok(unidadesValidas.has(insumo.unidad), `unidad inválida en ${insumo.codigo}: ${insumo.unidad}`);
@@ -25,9 +25,9 @@ describe('construirInsumos / construirProductos / construirCombos — funciones 
     }
   });
 
-  test('76 productos, con categoría traducida al enum VELA/RECIPIENTE/REPOSICION', () => {
+  test('79 productos vigentes, con categoría traducida al enum VELA/RECIPIENTE/REPOSICION', () => {
     const productos = construirProductos(textoProductos);
-    assert.equal(productos.length, 76);
+    assert.equal(productos.length, 79);
     const categoriasValidas = new Set(['VELA', 'RECIPIENTE', 'REPOSICION']);
     for (const producto of productos) {
       assert.ok(categoriasValidas.has(producto.categoria), `categoría inválida en ${producto.codigo}: ${producto.categoria}`);
@@ -48,11 +48,11 @@ describe('construirInsumos / construirProductos / construirCombos — funciones 
     }
   });
 
-  test('2 combos, con tipo PRODUCTO/INSUMO resuelto por código', () => {
+  test('21 combos vigentes, con tipo PRODUCTO/INSUMO resuelto por código', () => {
     const productos = construirProductos(textoProductos);
     const codigosProductos = new Set(productos.map((p) => p.codigo));
     const combos = construirCombos(jsonCombos, codigosProductos);
-    assert.equal(combos.length, 2);
+    assert.equal(combos.length, 21);
     for (const combo of combos) {
       for (const linea of combo.lineas) {
         assert.ok(['PRODUCTO', 'INSUMO'].includes(linea.tipo));
@@ -73,16 +73,16 @@ describe('sembrar — escribe en IndexedDB', () => {
     await Promise.all(Object.values(TIENDAS).map((tienda) => eliminarTodo(db, tienda)));
   });
 
-  test('con un solo comando quedan las 26 + 76 + 2 filas en sus tiendas', async () => {
+  test('con un solo comando quedan las 29 + 79 + 21 filas en sus tiendas', async () => {
     const insumos = construirInsumos(textoInsumos);
     const productos = construirProductos(textoProductos);
     const combos = construirCombos(jsonCombos, new Set(productos.map((p) => p.codigo)));
 
     await sembrar(db, { insumos, productos, combos });
 
-    assert.equal((await obtenerTodos(db, TIENDAS.INSUMOS)).length, 26);
-    assert.equal((await obtenerTodos(db, TIENDAS.PRODUCTOS)).length, 76);
-    assert.equal((await obtenerTodos(db, TIENDAS.COMBOS)).length, 2);
+    assert.equal((await obtenerTodos(db, TIENDAS.INSUMOS)).length, 29);
+    assert.equal((await obtenerTodos(db, TIENDAS.PRODUCTOS)).length, 79);
+    assert.equal((await obtenerTodos(db, TIENDAS.COMBOS)).length, 21);
   });
 
   test('es idempotente: sembrar dos veces no duplica (put por id)', async () => {
@@ -93,7 +93,7 @@ describe('sembrar — escribe en IndexedDB', () => {
     await sembrar(db, { insumos, productos, combos });
     await sembrar(db, { insumos, productos, combos });
 
-    assert.equal((await obtenerTodos(db, TIENDAS.INSUMOS)).length, 26);
-    assert.equal((await obtenerTodos(db, TIENDAS.PRODUCTOS)).length, 76);
+    assert.equal((await obtenerTodos(db, TIENDAS.INSUMOS)).length, 29);
+    assert.equal((await obtenerTodos(db, TIENDAS.PRODUCTOS)).length, 79);
   });
 });

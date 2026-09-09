@@ -6,8 +6,8 @@
       {
         "codigo": "V27",
         "cant": 1,
-        "costo_unit": 4700,
-        "subtotal": 4700
+        "costo_unit": 5400,
+        "subtotal": 5400
       },
       {
         "codigo": "A1",
@@ -28,45 +28,665 @@
         "subtotal": 450
       }
     ],
-    "esp_costo": 5445.5882,
-    "esp_precio": 7400
+    "esp_costo": 6145.588235294118,
+    "esp_precio": 8300
   },
   {
     "id": 2,
     "nombre": "vela aromatica",
     "lineas": [
       {
-        "codigo": "V26",
-        "cant": 1,
-        "costo_unit": 5000,
-        "subtotal": 5000
+        "codigo": "V3",
+        "cant": 1.1,
+        "costo_unit": 3200,
+        "subtotal": 3520.0000000000005
       },
+      {
+        "codigo": "A1",
+        "cant": 1,
+        "costo_unit": 200,
+        "subtotal": 200
+      },
+      {
+        "codigo": "A3",
+        "cant": 1,
+        "costo_unit": 45.9,
+        "subtotal": 45.9
+      },
+      {
+        "codigo": "A4",
+        "cant": 1.5,
+        "costo_unit": 150,
+        "subtotal": 225.0
+      },
+      {
+        "codigo": "R16",
+        "cant": 1,
+        "costo_unit": 1100,
+        "subtotal": 1100
+      },
+      {
+        "codigo": "E4",
+        "cant": 1,
+        "costo_unit": 180,
+        "subtotal": 180
+      }
+    ],
+    "esp_costo": 5270.900000000001,
+    "esp_precio": 7200
+  },
+  {
+    "id": 3,
+    "nombre": "vela aromatica",
+    "lineas": [
       {
         "codigo": "V3",
         "cant": 1,
-        "costo_unit": 3000,
-        "subtotal": 3000
+        "costo_unit": 3200,
+        "subtotal": 3200
       },
       {
-        "codigo": "E1",
+        "codigo": "R41",
         "cant": 1,
-        "costo_unit": 920,
-        "subtotal": 920
+        "costo_unit": 7500,
+        "subtotal": 7500
       },
       {
-        "codigo": "R29",
+        "codigo": "A2",
         "cant": 1,
-        "costo_unit": 9600,
-        "subtotal": 9600
+        "costo_unit": 500,
+        "subtotal": 500
+      },
+      {
+        "codigo": "E2",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 11720,
+    "esp_precio": 15900
+  },
+  {
+    "id": 4,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V25",
+        "cant": 1,
+        "costo_unit": 5800,
+        "subtotal": 5800
       },
       {
         "codigo": "A4",
         "cant": 1,
         "costo_unit": 150,
         "subtotal": 150
+      },
+      {
+        "codigo": "E2",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
       }
     ],
-    "esp_costo": 18670,
-    "esp_precio": 25300
+    "esp_costo": 6470,
+    "esp_precio": 8800
+  },
+  {
+    "id": 5,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V14",
+        "cant": 1,
+        "costo_unit": 6300,
+        "subtotal": 6300
+      },
+      {
+        "codigo": "A3",
+        "cant": 1,
+        "costo_unit": 45.9,
+        "subtotal": 45.9
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E6",
+        "cant": 1,
+        "costo_unit": 2000,
+        "subtotal": 2000
+      }
+    ],
+    "esp_costo": 8495.9,
+    "esp_precio": 11500
+  },
+  {
+    "id": 7,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V15",
+        "cant": 1,
+        "costo_unit": 5200,
+        "subtotal": 5200
+      },
+      {
+        "codigo": "R43",
+        "cant": 1,
+        "costo_unit": 10100,
+        "subtotal": 10100
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "A6",
+        "cant": 1,
+        "costo_unit": 1265,
+        "subtotal": 1265
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 17235,
+    "esp_precio": 23300
+  },
+  {
+    "id": 8,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V3",
+        "cant": 1.5,
+        "costo_unit": 3200,
+        "subtotal": 4800.0
+      },
+      {
+        "codigo": "R32",
+        "cant": 1,
+        "costo_unit": 8300,
+        "subtotal": 8300
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 13770,
+    "esp_precio": 18600
+  },
+  {
+    "id": 9,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V3",
+        "cant": 1,
+        "costo_unit": 3200,
+        "subtotal": 3200
+      },
+      {
+        "codigo": "R44",
+        "cant": 1,
+        "costo_unit": 8700,
+        "subtotal": 8700
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 12570,
+    "esp_precio": 17000
+  },
+  {
+    "id": 10,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V3",
+        "cant": 1,
+        "costo_unit": 3200,
+        "subtotal": 3200
+      },
+      {
+        "codigo": "R42",
+        "cant": 1,
+        "costo_unit": 9500,
+        "subtotal": 9500
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 13370,
+    "esp_precio": 18100
+  },
+  {
+    "id": 11,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V3",
+        "cant": 1.5,
+        "costo_unit": 3200,
+        "subtotal": 4800.0
+      },
+      {
+        "codigo": "R45",
+        "cant": 1,
+        "costo_unit": 8100,
+        "subtotal": 8100
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 13570,
+    "esp_precio": 18400
+  },
+  {
+    "id": 12,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V23",
+        "cant": 1,
+        "costo_unit": 9400,
+        "subtotal": 9400
+      },
+      {
+        "codigo": "R37",
+        "cant": 1,
+        "costo_unit": 7800,
+        "subtotal": 7800
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 17870,
+    "esp_precio": 24200
+  },
+  {
+    "id": 13,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V3",
+        "cant": 2,
+        "costo_unit": 3200,
+        "subtotal": 6400
+      },
+      {
+        "codigo": "R37",
+        "cant": 1,
+        "costo_unit": 7800,
+        "subtotal": 7800
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 14870,
+    "esp_precio": 20100
+  },
+  {
+    "id": 14,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V31",
+        "cant": 1,
+        "costo_unit": 6400,
+        "subtotal": 6400
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E10",
+        "cant": 1,
+        "costo_unit": 250,
+        "subtotal": 250
+      }
+    ],
+    "esp_costo": 6800,
+    "esp_precio": 9200
+  },
+  {
+    "id": 15,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V14",
+        "cant": 1,
+        "costo_unit": 6300,
+        "subtotal": 6300
+      },
+      {
+        "codigo": "A3",
+        "cant": 1,
+        "costo_unit": 45.9,
+        "subtotal": 45.9
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E10",
+        "cant": 1,
+        "costo_unit": 250,
+        "subtotal": 250
+      }
+    ],
+    "esp_costo": 6745.9,
+    "esp_precio": 9200
+  },
+  {
+    "id": 16,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V5",
+        "cant": 1,
+        "costo_unit": 5200,
+        "subtotal": 5200
+      },
+      {
+        "codigo": "A1",
+        "cant": 1,
+        "costo_unit": 200,
+        "subtotal": 200
+      },
+      {
+        "codigo": "A3",
+        "cant": 1,
+        "costo_unit": 45.9,
+        "subtotal": 45.9
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "A7",
+        "cant": 1,
+        "costo_unit": 160,
+        "subtotal": 160
+      },
+      {
+        "codigo": "R16",
+        "cant": 1,
+        "costo_unit": 1100,
+        "subtotal": 1100
+      },
+      {
+        "codigo": "E4",
+        "cant": 1,
+        "costo_unit": 180,
+        "subtotal": 180
+      }
+    ],
+    "esp_costo": 7035.9,
+    "esp_precio": 9500
+  },
+  {
+    "id": 17,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V3",
+        "cant": 1,
+        "costo_unit": 3200,
+        "subtotal": 3200
+      },
+      {
+        "codigo": "A1",
+        "cant": 1,
+        "costo_unit": 200,
+        "subtotal": 200
+      },
+      {
+        "codigo": "A3",
+        "cant": 1,
+        "costo_unit": 45.9,
+        "subtotal": 45.9
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "A7",
+        "cant": 1,
+        "costo_unit": 160,
+        "subtotal": 160
+      },
+      {
+        "codigo": "R16",
+        "cant": 1,
+        "costo_unit": 1100,
+        "subtotal": 1100
+      },
+      {
+        "codigo": "E4",
+        "cant": 1,
+        "costo_unit": 180,
+        "subtotal": 180
+      }
+    ],
+    "esp_costo": 5035.9,
+    "esp_precio": 6800
+  },
+  {
+    "id": 18,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V3",
+        "cant": 1,
+        "costo_unit": 3200,
+        "subtotal": 3200
+      },
+      {
+        "codigo": "R28",
+        "cant": 1,
+        "costo_unit": 11800,
+        "subtotal": 11800
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E12",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 15670,
+    "esp_precio": 21200
+  },
+  {
+    "id": 19,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V11",
+        "cant": 1,
+        "costo_unit": 5400,
+        "subtotal": 5400
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E2",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 6070,
+    "esp_precio": 8200
+  },
+  {
+    "id": 20,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V12",
+        "cant": 1,
+        "costo_unit": 6700,
+        "subtotal": 6700
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E2",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 7370,
+    "esp_precio": 10000
+  },
+  {
+    "id": 21,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V13",
+        "cant": 1,
+        "costo_unit": 4700,
+        "subtotal": 4700
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E2",
+        "cant": 1,
+        "costo_unit": 520,
+        "subtotal": 520
+      }
+    ],
+    "esp_costo": 5370,
+    "esp_precio": 7300
+  },
+  {
+    "id": 23,
+    "nombre": "vela aromatica",
+    "lineas": [
+      {
+        "codigo": "V15",
+        "cant": 1,
+        "costo_unit": 5200,
+        "subtotal": 5200
+      },
+      {
+        "codigo": "A4",
+        "cant": 1,
+        "costo_unit": 150,
+        "subtotal": 150
+      },
+      {
+        "codigo": "E10",
+        "cant": 1,
+        "costo_unit": 250,
+        "subtotal": 250
+      }
+    ],
+    "esp_costo": 5600,
+    "esp_precio": 7600
   }
 ]

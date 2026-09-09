@@ -1,27 +1,30 @@
 codigo;nombre;categoria;unidad;formula_costo;esp_costo_unit;esp_costo_prod;fila_excel
-M1;Cera alto pf;MATERIAL;gr;=3905*2/1000;7.81;7.81;5
-M2;Cera bajo pf;MATERIAL;;=7500/1000;7.5;7.5;6
+M1;Cera alto pf;MATERIAL;gr;=16000/1000;16;16;5
+M2;Cera bajo pf;MATERIAL;gr;=15000/1000;15;15;6
 M3;Colorante;MATERIAL;ml;=1700/10;170;170;7
 M4;Escencia;MATERIAL;ml;=6000*1.25/50;150;150;8
-M5;Pabilo;MATERIAL;unid.;=1000/10;100;100;9
+M5;Pabilo;MATERIAL;unid.;=9000/10*0.12*1.15;124.19999999999999;124.19999999999999;9
 M6;Aceite de Coco;MATERIAL;unid.;;18000;18000;10
 M7;Yeso;MATERIAL;kg;=18000*3/40;1350;1350;11
 M8;Barniz al agua;MATERIAL;ml;=CEILING(3200/15,5);215;215;12
+M9;Endurecedor;MATERIAL;gr;=6400/1000*1.15;7.359999999999999;7.359999999999999;13
 A1;Flores decoracion;ACCESORIO;unid.;;200;200;25
 A2;Tarjeta decoracion;ACCESORIO;unid.;=CEILING(450*3/3.5*1.28,10);500;500;26
 A3;Cinta;ACCESORIO;unid.;=765/5*0.3;45.9;45.9;27
 A4;Tarjeta presentacion;ACCESORIO;unid.;;150;150;28
 A5;Dije Cruz Dorada;ACCESORIO;unid.;=6500/68;95.58823529411765;95.58823529411765;29
-E1;Bolsa organza 25x30;EMPAQUE;unid.;=CEILING(23000/25,10);920;920;32
-E2;Bolsa organza 15x20;EMPAQUE;unid.;=CEILING(13000/25,10);520;520;33
-E3;Caja con visor corazon;EMPAQUE;unid.;;500;500;34
-E4;Bolsa celofan 10x20;EMPAQUE;unid.;=1200/10*1.5;180;180;35
-E5;Tul;EMPAQUE;unid.;=CEILING(30000/(10*1)*(0.5*0.6),10);900;900;36
-E6;Caja exagonal;EMPAQUE;unid.;;;2000;37
-E7;Bolsa gruesa;EMPAQUE;unid.;=7300/24;304.1666666666667;1500;38
-E8;Bolsa plastico 15X20;EMPAQUE;unid.;=CEILING(20000/50,10);400;400;39
-E9;Mini Cajas;EMPAQUE;unid.;=CEILING(49000/60,10);820;820;40
-E10;Bolsa organza 9x12;EMPAQUE;unid.;;250;250;41
-E11;Bolsa organza 9x12 comunion;EMPAQUE;unid.;=9000/20;450;450;42
-E12;Bolsa organza 17x23;EMPAQUE;unid.;=CEILING(13000/25,10);520;520;43
-MO;Mano de obra;MANO_DE_OBRA;hs;;7000;7000;51
+A6;Tapa Vaso Tennesse;ACCESORIO;unid.;=11000/10*1.15;1265;1265;30
+A7;Palo brochette;ACCESORIO;unid.;=4000/25;160;160;31
+E1;Bolsa organza 25x30;EMPAQUE;unid.;=CEILING(23000/25,10);920;920;41
+E2;Bolsa organza 15x20;EMPAQUE;unid.;=CEILING(13000/25,10);520;520;42
+E3;Caja con visor corazon;EMPAQUE;unid.;;500;500;43
+E4;Bolsa celofan 10x20;EMPAQUE;unid.;=1200/10*1.5;180;180;44
+E5;Tul;EMPAQUE;unid.;=CEILING(30000/(10*1)*(0.5*0.6),10);900;900;45
+E6;Caja exagonal;EMPAQUE;unid.;;2000;2000;46
+E7;Bolsa gruesa;EMPAQUE;unid.;=7300/24;1500;1500;47
+E8;Bolsa plastico 15X20;EMPAQUE;unid.;=CEILING(20000/50,10);400;400;48
+E9;Mini Cajas;EMPAQUE;unid.;=CEILING(49000/60,10);820;820;49
+E10;Bolsa organza 9x12;EMPAQUE;unid.;;250;250;50
+E11;Bolsa organza 9x12 comunion;EMPAQUE;unid.;=9000/20;450;450;51
+E12;Bolsa organza 17x23;EMPAQUE;unid.;=CEILING(13000/25,10);520;520;52
+MO;Mano de obra;MANO_DE_OBRA;hs;;7000;7000;60

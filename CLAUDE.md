@@ -1,7 +1,7 @@
 # Candelaria — reglas invariantes
 
 App de costeo, precios y pedidos para reemplazar la planilla
-`Velas_y_adornos_Candelaria_18-7-26.xlsx`. Fuente de verdad funcional:
+`Velas y adornos Candelaria 18-8-26.xlsx`. Fuente de verdad funcional:
 `ESPECIFICACION.md`. Fuente de verdad visual: `DISENO.md` (ante diferencia,
 manda la especificación).
 

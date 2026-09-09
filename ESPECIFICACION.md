@@ -1,7 +1,7 @@
 # Candelaria — Especificación de la app de costeo, precios y pedidos
 
 Documento de entrada para construir la aplicación. Reemplaza la planilla
-`Velas_y_adornos_Candelaria_18-7-26.xlsx`.
+`Velas y adornos Candelaria 18-8-26.xlsx`.
 
 **Idioma de toda la interfaz: español rioplatense. Moneda: pesos argentinos.
 Formato numérico: separador de miles `.`, decimal `,`.**
@@ -629,9 +629,9 @@ Entrada: el `.xlsx` original. Se ejecuta una vez; después todo se carga en la a
 
 | Hoja | Destino | Reglas |
 |---|---|---|
-| `Materia prima` | Insumos | Filas 5–12 → `MATERIAL`, 25–29 → `ACCESORIO`, 32–43 → `EMPAQUE`, 51 → `MANO_DE_OBRA`. Son 26 insumos. La columna C trae el costo unitario ya calculado; derivar `montoCompra`/`cantidadCompra` de la fórmula cuando sea posible, si no, cargar monto = costo unitario y cantidad = 1 |
+| `Materia prima` | Insumos | Filas 5–13 → `MATERIAL`, 25–31 → `ACCESORIO`, 41–52 → `EMPAQUE`, 60 → `MANO_DE_OBRA`. Son 29 insumos vigentes. La columna E contiene el costo efectivo de producción; conservarlo como valor esperado y derivar `montoCompra`/`cantidadCompra` cuando sea posible. |
 | `Costos` filas 4–34 | Productos `VELA` | |
-| `Costos` filas 43–80 | Productos `RECIPIENTE` | |
+| `Costos` filas 43–87 | Productos `RECIPIENTE` | |
 | `Costos` filas 92–94 | Productos `REPOSICION` | La planilla los codifica `R150`, `R50`, `R170`, que se confunden con los recipientes. **El importador los renombra a `RP150`, `RP50`, `RP170`** y los deja anotados en el listado de revisión |
 | `Combos` | Combos | Bloques de 13 filas |
 
@@ -640,11 +640,11 @@ Reglas de limpieza obligatorias:
 1. **Leer las fórmulas de las celdas, no sus valores calculados.** Es lo que
    permite derivar la herencia de costo y las cantidades de compra.
 2. **Códigos a mayúsculas.** La planilla mezcla `v26`, `r29`, `a4` con `V27`, `A1`.
-3. **Descartar filas vacías** (35–41, 81–90) y los valores sueltos de `AD459:AD467`.
+3. **Descartar filas vacías** (35–41, 88–90) y los valores sueltos fuera de los registros.
 4. **Ignorar la columna F de `Materia prima`.** No la usa ninguna fórmula.
 5. **Ignorar el bloque `Costos!AC120:AD146`.** Es un espejo de precios de combos
    con tres `#N/A`; en la app el combo se referencia por id.
-6. **Convertir `C60`, `C61`, `C80`** en la relación `heredaCostoDe`.
+6. **Convertir `C60`, `C61`, `C80`, `C82` y `C85`** en relaciones `heredaCostoDe` cuando la fórmula referencia otra fila de producto. Las fórmulas aritméticas de costo se conservan como costo efectivo y no como herencia.
 7. **Ojo con la clave de búsqueda.** La planilla vincula producto e insumo por
    el **nombre** del insumo (`VLOOKUP` sobre la columna B de `Materia prima`),
    no por el código. Los nombres de los encabezados de `Costos` (fila 2) deben
@@ -673,18 +673,18 @@ Archivos provistos:
 
 | Archivo | Contenido |
 |---|---|
-| `fixtures_insumos.csv` | 26 insumos con su costo unitario esperado |
-| `fixtures_productos.csv` | 76 productos con sus consumos y los valores esperados de materiales, subtotal, costo de producción y precio |
-| `fixtures_combos.json` | 2 combos con sus líneas, costo y precio esperados |
+| `fixtures_insumos.csv` | 29 insumos vigentes con su costo unitario esperado |
+| `fixtures_productos.csv` | 79 productos vigentes con sus consumos y los valores esperados de materiales, subtotal, costo de producción y precio |
+| `fixtures_combos.json` | 21 combos vigentes con sus líneas, costo y precio esperados; excluye los duplicados exactos y los bloques vacíos |
 
 Los tres usan `;` como separador y `.` como decimal.
 
 ### 8.1 Motor y datos
 
-1. Para cada uno de los 76 productos, el motor reproduce `esp_materiales`,
+1. Para cada uno de los 79 productos, el motor reproduce `esp_materiales`,
    `esp_subtotal`, `esp_costo_prod` y `esp_precio` con tolerancia de 0,01.
-2. Para los 2 combos, reproduce `esp_costo` y `esp_precio`.
-3. Cambiar `beneficio` de 0,35 a 0,40 modifica los 76 precios y ningún costo.
+2. Para los 21 combos, reproduce `esp_costo` y `esp_precio`.
+3. Cambiar `beneficio` de 0,35 a 0,40 modifica los 79 precios y ningún costo.
 4. Un pedido guardado conserva sus precios tras cambiar cualquier parámetro global.
 5. Exportar e importar el respaldo devuelve una base idéntica.
 6. Se puede crear un insumo, un producto y un combo desde cero, sin importar
