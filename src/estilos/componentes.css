@@ -448,6 +448,11 @@ h1, h2, h3 {
   margin-bottom: var(--relleno-lista-inferior);
 }
 
+.vender-pedido-ancla {
+  scroll-margin-top: var(--esp-seccion);
+  scroll-margin-bottom: var(--relleno-lista-inferior);
+}
+
 .vender-pedido__titulo,
 .pedido-linea__encabezado,
 .pedido-linea__controles {

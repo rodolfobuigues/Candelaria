@@ -1,6 +1,6 @@
 /** @jsx h */
 import { h } from 'preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { abrirDB, obtenerTodos } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { obtenerCatalogo } from '../../../persistencia/catalogoRepo.js';
@@ -179,6 +179,12 @@ export function Vender() {
   const [cliente, setCliente] = useState({ nombre: '', telefono: '', nota: '' });
   const [guardando, setGuardando] = useState(false);
   const [confirmacion, setConfirmacion] = useState(null);
+  const pedidoRef = useRef(null);
+
+  useEffect(() => {
+    if (!mostrarPedido) return;
+    requestAnimationFrame(() => pedidoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, [mostrarPedido]);
 
   useEffect(() => {
     let activo = true;
@@ -308,15 +314,17 @@ export function Vender() {
         </section>
       )}
       {mostrarPedido && (
-        <FormularioPedido
-          lineas={lineas}
-          total={total}
-          cliente={accionesCliente}
-          setCliente={setCliente}
-          guardar={guardar}
-          guardando={guardando}
-          error={error}
-        />
+        <div ref={pedidoRef} class="vender-pedido-ancla">
+          <FormularioPedido
+            lineas={lineas}
+            total={total}
+            cliente={accionesCliente}
+            setCliente={setCliente}
+            guardar={guardar}
+            guardando={guardando}
+            error={error}
+          />
+        </div>
       )}
       {lineas.length > 0 && !mostrarPedido && (
         <div class="barra-flotante-carrito">
