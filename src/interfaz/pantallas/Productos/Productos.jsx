@@ -191,6 +191,16 @@ export function Productos() {
         ))}
       </div>
 
+      <div class="productos-acciones">
+        <button
+          type="button"
+          class="boton-primario"
+          onClick={() => navegarA(`${solapa === 'combos' ? 'combo-nuevo' : solapa === 'productos' ? 'producto-nuevo' : 'insumo-nuevo'}`)}
+        >
+          + Nuevo {solapa === 'combos' ? 'combo' : solapa === 'productos' ? 'producto' : 'insumo'}
+        </button>
+      </div>
+
       <label class="campo-entrada productos-buscador">
         <span>Buscar</span>
         <input

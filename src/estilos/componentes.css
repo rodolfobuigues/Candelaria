@@ -99,6 +99,12 @@ h1, h2, h3 {
   padding-bottom: var(--relleno-lista-inferior);
 }
 
+.productos-acciones {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--esp-elemento) 0;
+}
+
 .productos-buscador {
   margin: var(--esp-elemento) 0;
 }
@@ -1166,6 +1172,7 @@ h1, h2, h3 {
   position: fixed;
   right: var(--esp-pantalla);
   bottom: var(--esp-pantalla);
+  z-index: 3;
   width: var(--fab);
   height: var(--fab);
   display: flex;
@@ -1177,6 +1184,10 @@ h1, h2, h3 {
   color: var(--color-on-primary);
   box-shadow: var(--sombra-flotante);
   cursor: pointer;
+}
+
+.productos-pantalla > .boton-flotante {
+  bottom: calc(var(--relleno-lista-inferior) + var(--esp-elemento));
 }
 
 /* === Aviso === */
