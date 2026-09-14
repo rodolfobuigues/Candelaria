@@ -39,14 +39,14 @@ usarse para sobrescribir el catálogo remoto.
 |---|---|---|
 | 0 — Preparación | ✅ | Node 24.16, Claude Code 2.1.210, git, `.gitignore` |
 | 1 — Reglas y `CLAUDE.md` | ✅ | Resueltas 5 contradicciones entre documentos |
-| 2 — Motor de cálculo | ✅ | 79 productos, 29 insumos y 21 combos vigentes validados contra las fixtures del Excel 18/08/2026 |
+| 2 — Motor de cálculo | ✅ | Cálculos validados contra las fixtures históricas; el catálogo vigente y sus cantidades provienen de Supabase |
 | 3a — Persistencia | ✅ | IndexedDB, respaldo JSON, pagos e historial |
 | 3b — Tokens de estilo | ✅ | Tokens, componentes, fuentes locales y guardián con 4 tests de control |
 | 4 — Interfaz | ✅ | **Cimientos ✅. 12 de 12 pantallas** |
 | 5 — Importador y Excel | 🔄 | Respaldo JSON seguro, CSV y lector inicial de planilla XLSX; falta completar la previsualización y aplicación validada de XLSX |
-| 6 — PWA publicada | 🔄 | GitHub Pages activo, iconos instalables, actualización controlada y persistencia local; falta validación final desde Android físico |
+| 6 — PWA publicada | ✅ | GitHub Pages activo; instalación, apertura desde icono, fotos y actualización verificadas en Android físico el 14/09/2026 |
 | 7 — Supabase | ✅ | Autenticación, tablas, RLS y catálogo remoto vigentes |
-| 8 — Endurecimiento | 🔄 | Correcciones de pedidos, navegación, mensajes, restauración protegida y transición de fotos a Storage |
+| 8 — Endurecimiento | 🔄 | Correcciones de pedidos, navegación, mensajes, restauración protegida y fotos migradas a Storage |
 | 9 — Catálogo público | ✅ | Proyección pública exclusiva de combos; recetas, costos, pedidos y ajustes requieren autenticación |
 
 ---
@@ -194,6 +194,9 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
     Lee `catalogo_publico_combos`, una proyección con nombre, descripción,
     precio y fotos. El panel autenticado la sincroniza con el motor vigente al
     iniciar sesión y después de cada cambio que afecta precios o contenido.
+20. **La PWA quedó validada en un teléfono Android real el 14/09/2026.** Se
+    comprobó la instalación, la apertura desde su icono y la actualización de
+    la versión publicada en GitHub Pages.
 
 ---
 
@@ -201,8 +204,6 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 
 | Pendiente | Cuándo |
 |---|---|
-| Ejecutar desde Ajustes la revisión de fotos Base64 y, si el resultado es correcto, iniciar la migración resumible a Storage | Operación manual del creador |
-| Verificar instalación, navegación, fotos y actualización desde Android sobre GitHub Pages | Validación final PWA |
 | Completar la previsualización y aplicación validada del importador XLSX sin sobrescribir silenciosamente datos remotos | Importación |
 | No corregir materiales sin costo o fórmulas dudosas sin consulta previa | Regla permanente |
 
