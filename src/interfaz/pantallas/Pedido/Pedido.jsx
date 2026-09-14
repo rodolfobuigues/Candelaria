@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { abrirDB } from '../../../persistencia/db.js';
 import { obtenerPedido, guardarPedido } from '../../../persistencia/pedidosRepo.js';
 import { calcularDerivados, marcarEntregado, registrarMensaje } from '../../../persistencia/pedidoLogica.js';
+import { construirMensajePedido } from '../../../persistencia/mensajes.js';
 import { formatearFecha, formatearFechaHora, formatearImporte } from '../../../config/formato.js';
-import { construirMensajePedido } from '../Mensaje/Mensaje.jsx';
 import { navegarA } from '../../enrutador.js';
 
 function LineasPedido({ pedido }) {
@@ -86,7 +86,7 @@ function MensajesGenerados({ pedido, copiar }) {
       <ul class="pedido-mensajes">
         {mensajes.map((evento) => (
           <li key={evento.id ?? evento.fecha}>
-            <span class="texto-cuerpo-s">{formatearFechaHora(evento.fecha)}</span>
+            <span class="texto-cuerpo-s">{evento.categoria ? `${evento.categoria[0].toUpperCase()}${evento.categoria.slice(1)} · ` : ''}{formatearFechaHora(evento.fecha)}</span>
             <pre class="mensaje-contenido">{evento.texto}</pre>
             <button type="button" class="boton-secundario" onClick={() => copiar(evento)}>Copiar mensaje</button>
           </li>
@@ -96,7 +96,7 @@ function MensajesGenerados({ pedido, copiar }) {
   );
 }
 
-export function Pedido({ id }) {
+export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
   const [pedido, setPedido] = useState(null);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -118,7 +118,7 @@ export function Pedido({ id }) {
     return () => { activo = false; };
   }, [id]);
 
-  async function actualizar(transformar) {
+  async function actualizar(transformar, despuesDeGuardar = null) {
     setGuardando(true);
     setError(null);
     try {
@@ -126,6 +126,7 @@ export function Pedido({ id }) {
       const actualizado = transformar(pedido, new Date().toISOString());
       await guardarPedido(db, actualizado);
       setPedido({ ...actualizado, ...calcularDerivados(actualizado) });
+      despuesDeGuardar?.(actualizado);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -134,7 +135,10 @@ export function Pedido({ id }) {
   }
 
   function marcarComoEntregado() {
-    actualizar((actual, fecha) => marcarEntregado(actual, fecha));
+    actualizar(
+      (actual, fecha) => marcarEntregado(actual, fecha),
+      () => navegarA(`mensaje/${pedido.id}?tipo=entrega&origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)
+    );
   }
 
   async function copiarMensaje(evento = null) {
@@ -143,7 +147,7 @@ export function Pedido({ id }) {
       await globalThis.navigator.clipboard.writeText(texto);
       if (!evento) {
         const db = await abrirDB();
-        const registrado = registrarMensaje(pedido, { id: globalThis.crypto?.randomUUID?.() ?? `mensaje-${Date.now()}`, fecha: new Date().toISOString(), texto });
+        const registrado = registrarMensaje(pedido, { id: globalThis.crypto?.randomUUID?.() ?? `mensaje-${Date.now()}`, fecha: new Date().toISOString(), texto, categoria: 'confirmacion' });
         await guardarPedido(db, registrado);
         setPedido({ ...registrado, ...calcularDerivados(registrado) });
       }
@@ -181,7 +185,7 @@ export function Pedido({ id }) {
         <Totales pedido={pedido} />
       </section>
 
-      <BloquePagos pedido={pedido} registrar={() => navegarA(`pago/${pedido.id}`)} />
+      <BloquePagos pedido={pedido} registrar={() => navegarA(`pago/${pedido.id}?origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)} />
       <MensajesGenerados pedido={pedido} copiar={copiarMensaje} />
       <Historial pedido={pedido} />
 

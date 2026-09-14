@@ -4,9 +4,9 @@ import { useEffect, useState } from 'preact/hooks';
 import { MARCADORES, obtenerPlantilla, guardarPlantilla, PLANTILLAS_INICIALES } from '../../../config/plantillas.js';
 import { navegarA } from '../../enrutador.js';
 
-const EJEMPLO = { cliente: 'Ana', numero: '24', fecha: '09/09/2026', detalle: '1 × Vela aromática — $ 8.300', total: '$ 8.300', pagado: '$ 0', saldo: '$ 8.300' };
+const EJEMPLO = { cliente: 'Ana', numero: '24', fecha: '09/09/2026', detalle: '1 × Vela aromática — $ 8.300', total: '$ 8.300', pagado: '$ 3.000', saldo: '$ 5.300', montoPago: '$ 3.000', medioPago: 'Transferencia' };
 
-function previsualizar(texto) { return texto.replace(/\{(cliente|numero|fecha|detalle|total|pagado|saldo)\}/g, (_, clave) => EJEMPLO[clave]).replace(/\{nota\}/g, '').replace(/^.*\{nota\}.*$/gm, ''); }
+function previsualizar(texto) { return texto.replace(/\{(cliente|numero|fecha|detalle|total|pagado|saldo|montoPago|medioPago)\}/g, (_, clave) => EJEMPLO[clave]).replace(/\{nota\}/g, '').replace(/^.*\{nota\}.*$/gm, ''); }
 
 export function PlantillaForm({ id }) {
   const [texto, setTexto] = useState(''); const [guardado, setGuardado] = useState(false);

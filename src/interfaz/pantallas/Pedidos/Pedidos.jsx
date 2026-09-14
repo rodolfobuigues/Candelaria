@@ -26,12 +26,12 @@ function etiquetaCobro(estadoCobro) {
   return estadoCobro.toLowerCase().replace('_', '-');
 }
 
-function TarjetaPedido({ pedido }) {
+function TarjetaPedido({ pedido, filtro }) {
   const importe = pedido.saldo > 0 ? pedido.saldo : pedido.total;
   const rotuloImporte = pedido.saldo > 0 ? 'SALDO' : 'TOTAL';
   return (
     <li>
-      <button type="button" class={`tarjeta tarjeta-pedido tarjeta-pedido--${pedido.estadoEntrega.toLowerCase()}`} onClick={() => navegarA(`pedido/${pedido.id}`)}>
+      <button type="button" class={`tarjeta tarjeta-pedido tarjeta-pedido--${pedido.estadoEntrega.toLowerCase()}`} onClick={() => navegarA(`pedido/${pedido.id}?origen=pedidos&filtro=${encodeURIComponent(filtro)}`)}>
         <div class="tarjeta-pedido__cabecera">
           <div class="fila-lista__contenido">
             <strong class="nombre-truncado">{pedido.clienteNombre}</strong>
@@ -52,7 +52,7 @@ function TarjetaPedido({ pedido }) {
 }
 
 export function Pedidos() {
-  const [filtro, setFiltro] = useState('SALDO');
+  const [filtro, setFiltro] = useState(() => new URLSearchParams(globalThis.location.hash.split('?')[1] ?? '').get('filtro') ?? 'SALDO');
   const [pedidos, setPedidos] = useState(null);
   const [error, setError] = useState(null);
 
@@ -90,7 +90,7 @@ export function Pedidos() {
       )}
       {pedidos && visibles.length > 0 && (
         <ul class="pedidos-lista">
-          {visibles.map((pedido) => <TarjetaPedido key={pedido.id} pedido={pedido} />)}
+          {visibles.map((pedido) => <TarjetaPedido key={pedido.id} pedido={pedido} filtro={filtro} />)}
         </ul>
       )}
     </section>

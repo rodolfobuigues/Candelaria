@@ -4,18 +4,16 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { abrirDB } from '../../../persistencia/db.js';
 import { obtenerPedido, guardarPedido } from '../../../persistencia/pedidosRepo.js';
 import { registrarMensaje, calcularDerivados } from '../../../persistencia/pedidoLogica.js';
+import { construirMensajePedido } from '../../../persistencia/mensajes.js';
 import { formatearImporte } from '../../../config/formato.js';
 
-export function construirMensajePedido(pedido) {
-  const lineas = pedido.lineas.map((linea) => `• ${linea.cantidad} × ${linea.nombreCongelado} — ${formatearImporte(linea.precioAplicado * linea.cantidad)}`);
-  return `Hola ${pedido.clienteNombre}, este es el detalle de tu pedido #${pedido.numero}:\n\n${lineas.join('\n')}\n\nTotal: ${formatearImporte(pedido.total)}\n¡Gracias!`;
-}
+const TITULOS = { confirmacion: 'Confirmación lista', pago: 'Mensaje de pago listo', entrega: 'Mensaje de entrega listo', recordatorio: 'Recordatorio listo' };
 
-export function Mensaje({ id }) {
+export function Mensaje({ id, tipo = 'confirmacion', pagoId = null }) {
   const [pedido, setPedido] = useState(null);
   const [error, setError] = useState(null);
   const [copiado, setCopiado] = useState(false);
-  const mensaje = useMemo(() => pedido && construirMensajePedido(pedido), [pedido]);
+  const mensaje = useMemo(() => pedido && construirMensajePedido(pedido, { tipo, pagoId }), [pedido, tipo, pagoId]);
 
   useEffect(() => {
     let activo = true;
@@ -24,17 +22,18 @@ export function Mensaje({ id }) {
         const db = await abrirDB();
         const resultado = await obtenerPedido(db, id);
         if (!resultado) throw new Error('No encontramos ese pedido.');
-        const texto = construirMensajePedido(resultado);
-        const registrado = registrarMensaje(resultado, { id: globalThis.crypto?.randomUUID?.() ?? `mensaje-${Date.now()}`, fecha: new Date().toISOString(), texto });
+        const texto = construirMensajePedido(resultado, { tipo, pagoId });
+        const idMensaje = `mensaje-${tipo}-${pagoId ?? resultado.id}`;
+        const registrado = registrarMensaje(resultado, { id: idMensaje, fecha: new Date().toISOString(), texto, categoria: tipo });
         await guardarPedido(db, registrado);
-        if (activo) setPedido({ ...resultado, ...registrado, ...calcularDerivados(registrado) });
+        if (activo) setPedido({ ...registrado, ...calcularDerivados(registrado) });
       } catch (e) {
         if (activo) setError(e.message);
       }
     }
     cargar();
     return () => { activo = false; };
-  }, [id]);
+  }, [id, tipo, pagoId]);
 
   async function copiar() {
     try {
@@ -62,7 +61,7 @@ export function Mensaje({ id }) {
         <div class="mensaje-tarjeta__cabecera">
           <div>
             <span class="texto-cuerpo-s">Pedido #{pedido.numero}</span>
-            <h2>Mensaje listo</h2>
+            <h2>{TITULOS[tipo] ?? 'Mensaje listo'}</h2>
           </div>
           <span class="importe">{formatearImporte(pedido.total)}</span>
         </div>

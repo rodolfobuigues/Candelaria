@@ -28,7 +28,11 @@ const TITULOS = {
 export function App() {
   const ruta = useRuta();
   const [rutaBase, consulta] = ruta.split('?');
-  const origen = new URLSearchParams(consulta ?? '').get('origen');
+  const parametrosRuta = new URLSearchParams(consulta ?? '');
+  const origen = parametrosRuta.get('origen');
+  const filtroOrigen = parametrosRuta.get('filtro');
+  const tipoMensaje = parametrosRuta.get('tipo') ?? 'confirmacion';
+  const pagoIdMensaje = parametrosRuta.get('pagoId');
   const esFichaProducto = rutaBase.startsWith('producto/');
   const esPedido = rutaBase.startsWith('pedido/');
   const esMensaje = rutaBase.startsWith('mensaje/');
@@ -47,18 +51,21 @@ export function App() {
   const idPlantilla = esPlantilla ? rutaBase.split('/')[1] : null;
   const titulo = esFichaProducto ? 'Producto' : esPedido ? 'Pedido' : esMensaje ? 'Mensaje' : esRegistroPago ? 'Registrar pago' : esInsumoForm ? 'Insumo' : esProductoForm ? 'Producto' : esComboForm ? 'Combo' : esPlantilla ? 'Plantilla' : (TITULOS[rutaBase] ?? 'Candelaria');
   const volverProductos = () => navegarA(`productos?solapa=${origen ?? (esInsumoForm ? 'insumos' : esComboForm ? 'combos' : 'productos')}`);
+  const consultaOrigenPedido = `${origen ? `?origen=${encodeURIComponent(origen)}` : '?origen=pedidos'}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`;
+  const volverDesdePedido = () => navegarA(origen === 'vender' ? 'vender' : `pedidos${filtroOrigen ? `?filtro=${encodeURIComponent(filtroOrigen)}` : ''}`);
+  const volverAlPedido = (pedidoId) => navegarA(`pedido/${pedidoId}${consultaOrigenPedido}`);
 
   return (
     <>
-      <Encabezado titulo={titulo} alVolver={esFichaProducto || esInsumoForm || esProductoForm || esComboForm ? volverProductos : esPedido ? () => navegarA('vender') : esMensaje ? () => navegarA(`pedido/${idMensaje}`) : esRegistroPago ? () => navegarA(`pedido/${idRegistroPago}`) : esPlantilla ? () => navegarA('ajustes') : undefined} />
+      <Encabezado titulo={titulo} alVolver={esFichaProducto || esInsumoForm || esProductoForm || esComboForm ? volverProductos : esPedido ? volverDesdePedido : esMensaje ? () => volverAlPedido(idMensaje) : esRegistroPago ? () => volverAlPedido(idRegistroPago) : esPlantilla ? () => navegarA('ajustes') : undefined} />
       <main class="contenido">
         {rutaBase === 'productos' && <Productos />}
         {rutaBase === 'pedidos' && <Pedidos />}
         {esFichaProducto && <FichaProducto codigo={codigoProducto} />}
         {rutaBase === 'vender' && <Vender />}
-        {esPedido && <Pedido id={idPedido} />}
-        {esMensaje && <Mensaje id={idMensaje} />}
-        {esRegistroPago && <RegistroPago id={idRegistroPago} />}
+        {esPedido && <Pedido id={idPedido} origen={origen ?? 'pedidos'} filtroOrigen={filtroOrigen} />}
+        {esMensaje && <Mensaje id={idMensaje} tipo={tipoMensaje} pagoId={pagoIdMensaje} />}
+        {esRegistroPago && <RegistroPago id={idRegistroPago} origen={origen ?? 'pedidos'} filtroOrigen={filtroOrigen} />}
         {esInsumoForm && <InsumoForm id={idInsumo} />}
         {esProductoForm && <ProductoForm id={idProductoForm} />}
         {esComboForm && <ComboForm id={idComboForm} />}

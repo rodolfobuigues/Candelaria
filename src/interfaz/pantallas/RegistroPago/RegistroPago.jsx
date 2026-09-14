@@ -13,7 +13,7 @@ function idNuevo() {
   return `pago-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
 }
 
-export function RegistroPago({ id }) {
+export function RegistroPago({ id, origen = 'pedidos', filtroOrigen = null }) {
   const [pedido, setPedido] = useState(null);
   const [monto, setMonto] = useState('');
   const [medio, setMedio] = useState(MEDIOS[0]);
@@ -49,10 +49,11 @@ export function RegistroPago({ id }) {
     setError(null);
     try {
       const fecha = new Date().toISOString();
-      const actualizado = registrarPago(pedido, { id: idNuevo(), fecha, monto: montoNumerico, medio });
+      const pagoId = idNuevo();
+      const actualizado = registrarPago(pedido, { id: pagoId, fecha, monto: montoNumerico, medio });
       const db = await abrirDB();
       await guardarPedido(db, actualizado);
-      navegarA(`pedido/${id}`);
+      navegarA(`mensaje/${id}?tipo=pago&pagoId=${encodeURIComponent(pagoId)}&origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`);
     } catch (e) {
       setError(e.message);
     } finally {

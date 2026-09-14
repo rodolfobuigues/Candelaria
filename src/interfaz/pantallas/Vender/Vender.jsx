@@ -318,8 +318,8 @@ export function Vender() {
         <section class="tarjeta vender-confirmacion" aria-live="polite">
           <strong>Pedido #{confirmacion.numero} guardado</strong>
           <span class="texto-cuerpo-s">Total {formatearImporte(confirmacion.total)} · entrega pendiente</span>
-          <button type="button" class="boton-primario" onClick={() => navegarA(`mensaje/${confirmacion.id}`)}>Ver mensaje</button>
-          <button type="button" class="boton-secundario" onClick={() => navegarA(`pedido/${confirmacion.id}`)}>Abrir pedido</button>
+          <button type="button" class="boton-primario" onClick={() => navegarA(`mensaje/${confirmacion.id}?tipo=confirmacion&origen=vender`)}>Ver mensaje</button>
+          <button type="button" class="boton-secundario" onClick={() => navegarA(`pedido/${confirmacion.id}?origen=vender`)}>Abrir pedido</button>
         </section>
       )}
       {mostrarPedido && (
