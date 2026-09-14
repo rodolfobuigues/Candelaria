@@ -1048,6 +1048,15 @@ h1, h2, h3 {
 }
 
 @media (max-width: 480px) {
+  .catalogo-publico__encabezado {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catalogo-publico__ingresar {
+    width: 100%;
+  }
+
   .galeria-fotos__encabezado {
     align-items: flex-start;
     flex-direction: column;
