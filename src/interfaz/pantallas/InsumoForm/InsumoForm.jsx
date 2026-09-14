@@ -1,7 +1,7 @@
 /** @jsx h */
 import { h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { abrirDB, guardar } from '../../../persistencia/db.js';
+import { abrirDB, guardar, obtenerPorId } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { navegarA } from '../../enrutador.js';
@@ -17,11 +17,7 @@ export function InsumoForm({ id = null }) {
   useEffect(() => {
     if (!id) return undefined;
     let activo = true;
-    abrirDB().then((db) => new Promise((resolve, reject) => {
-      const solicitud = db.transaction(TIENDAS.INSUMOS, 'readonly').objectStore(TIENDAS.INSUMOS).get(id);
-      solicitud.onsuccess = () => resolve(solicitud.result);
-      solicitud.onerror = () => reject(solicitud.error);
-    })).then((insumo) => {
+    abrirDB().then((db) => obtenerPorId(db, TIENDAS.INSUMOS, id)).then((insumo) => {
       if (activo && insumo) setForm({ ...insumo, montoCompra: String(insumo.montoCompra), cantidadCompra: String(insumo.cantidadCompra) });
     }).catch((e) => activo && setError(e.message));
     return () => { activo = false; };

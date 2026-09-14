@@ -27,39 +27,42 @@ const TITULOS = {
 
 export function App() {
   const ruta = useRuta();
-  const esFichaProducto = ruta.startsWith('producto/');
-  const esPedido = ruta.startsWith('pedido/');
-  const esMensaje = ruta.startsWith('mensaje/');
-  const esRegistroPago = ruta.startsWith('pago/');
-  const esInsumoForm = ruta === 'insumo-nuevo' || ruta.startsWith('insumo-editar/');
-  const esProductoForm = ruta === 'producto-nuevo' || ruta.startsWith('producto-editar/');
-  const esComboForm = ruta === 'combo-nuevo' || ruta.startsWith('combo-editar/');
-  const esPlantilla = ruta.startsWith('plantilla/');
-  const codigoProducto = esFichaProducto ? ruta.split('/')[1] : null;
-  const idPedido = esPedido ? ruta.split('/')[1] : null;
-  const idMensaje = esMensaje ? ruta.split('/')[1] : null;
-  const idRegistroPago = esRegistroPago ? ruta.split('/')[1] : null;
-  const idInsumo = ruta.startsWith('insumo-editar/') ? ruta.split('/')[1] : null;
-  const idProductoForm = ruta.startsWith('producto-editar/') ? ruta.split('/')[1] : null;
-  const idComboForm = ruta.startsWith('combo-editar/') ? ruta.split('/')[1] : null;
-  const idPlantilla = esPlantilla ? ruta.split('/')[1] : null;
-  const titulo = esFichaProducto ? 'Producto' : esPedido ? 'Pedido' : esMensaje ? 'Mensaje' : esRegistroPago ? 'Registrar pago' : esInsumoForm ? 'Insumo' : esProductoForm ? 'Producto' : esComboForm ? 'Combo' : esPlantilla ? 'Plantilla' : (TITULOS[ruta] ?? 'Candelaria');
+  const [rutaBase, consulta] = ruta.split('?');
+  const origen = new URLSearchParams(consulta ?? '').get('origen');
+  const esFichaProducto = rutaBase.startsWith('producto/');
+  const esPedido = rutaBase.startsWith('pedido/');
+  const esMensaje = rutaBase.startsWith('mensaje/');
+  const esRegistroPago = rutaBase.startsWith('pago/');
+  const esInsumoForm = rutaBase === 'insumo-nuevo' || rutaBase.startsWith('insumo-editar/');
+  const esProductoForm = rutaBase === 'producto-nuevo' || rutaBase.startsWith('producto-editar/');
+  const esComboForm = rutaBase === 'combo-nuevo' || rutaBase.startsWith('combo-editar/');
+  const esPlantilla = rutaBase.startsWith('plantilla/');
+  const codigoProducto = esFichaProducto ? rutaBase.split('/')[1] : null;
+  const idPedido = esPedido ? rutaBase.split('/')[1] : null;
+  const idMensaje = esMensaje ? rutaBase.split('/')[1] : null;
+  const idRegistroPago = esRegistroPago ? rutaBase.split('/')[1] : null;
+  const idInsumo = rutaBase.startsWith('insumo-editar/') ? rutaBase.split('/')[1] : null;
+  const idProductoForm = rutaBase.startsWith('producto-editar/') ? rutaBase.split('/')[1] : null;
+  const idComboForm = rutaBase.startsWith('combo-editar/') ? rutaBase.split('/')[1] : null;
+  const idPlantilla = esPlantilla ? rutaBase.split('/')[1] : null;
+  const titulo = esFichaProducto ? 'Producto' : esPedido ? 'Pedido' : esMensaje ? 'Mensaje' : esRegistroPago ? 'Registrar pago' : esInsumoForm ? 'Insumo' : esProductoForm ? 'Producto' : esComboForm ? 'Combo' : esPlantilla ? 'Plantilla' : (TITULOS[rutaBase] ?? 'Candelaria');
+  const volverProductos = () => navegarA(`productos?solapa=${origen ?? (esInsumoForm ? 'insumos' : esComboForm ? 'combos' : 'productos')}`);
 
   return (
     <>
-      <Encabezado titulo={titulo} alVolver={esFichaProducto || esInsumoForm || esProductoForm || esComboForm ? () => navegarA('productos') : esPedido ? () => navegarA('vender') : esMensaje ? () => navegarA(`pedido/${idMensaje}`) : esRegistroPago ? () => navegarA(`pedido/${idRegistroPago}`) : esPlantilla ? () => navegarA('ajustes') : undefined} />
+      <Encabezado titulo={titulo} alVolver={esFichaProducto || esInsumoForm || esProductoForm || esComboForm ? volverProductos : esPedido ? () => navegarA('vender') : esMensaje ? () => navegarA(`pedido/${idMensaje}`) : esRegistroPago ? () => navegarA(`pedido/${idRegistroPago}`) : esPlantilla ? () => navegarA('ajustes') : undefined} />
       <main class="contenido">
-        {ruta === 'productos' && <Productos />}
-        {ruta === 'pedidos' && <Pedidos />}
+        {rutaBase === 'productos' && <Productos />}
+        {rutaBase === 'pedidos' && <Pedidos />}
         {esFichaProducto && <FichaProducto codigo={codigoProducto} />}
-        {ruta === 'vender' && <Vender />}
+        {rutaBase === 'vender' && <Vender />}
         {esPedido && <Pedido id={idPedido} />}
         {esMensaje && <Mensaje id={idMensaje} />}
         {esRegistroPago && <RegistroPago id={idRegistroPago} />}
         {esInsumoForm && <InsumoForm id={idInsumo} />}
         {esProductoForm && <ProductoForm id={idProductoForm} />}
         {esComboForm && <ComboForm id={idComboForm} />}
-        {ruta === 'ajustes' && <Ajustes />}
+        {rutaBase === 'ajustes' && <Ajustes />}
         {esPlantilla && <PlantillaForm id={idPlantilla} />}
       </main>
       <BarraInferior />

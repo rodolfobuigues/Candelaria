@@ -149,7 +149,7 @@ export function FichaProducto({ codigo }) {
         <Indicador etiqueta="Minutos mano de obra" valor={`${numeroTexto(producto.minutosManoObra, 0)} min`} />
       </section>
 
-      <button type="button" class="boton-secundario" onClick={() => navegarA(`producto-editar/${producto.codigo}`)}>Editar receta</button>
+      <button type="button" class="boton-secundario" onClick={() => navegarA(`producto-editar/${producto.codigo}?origen=productos`)}>Editar receta</button>
     </section>
   );
 }

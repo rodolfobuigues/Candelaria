@@ -55,7 +55,7 @@ function agruparProductos(productos) {
 function FilaProducto({ producto }) {
   return (
     <li>
-      <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`producto/${producto.id}`)}>
+      <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`producto/${producto.id}?origen=productos`)}>
         <div class="fila-lista__contenido">
           <strong class="nombre-truncado">{producto.nombre}</strong>
           <span class="texto-cuerpo-s fila-lista__codigo">{producto.codigo}</span>
@@ -107,7 +107,7 @@ function ListaCombos({ combos, productosPorId, insumosPorId, busqueda }) {
     <ul class="lista">
       {visibles.map((combo) => (
         <li key={combo.id}>
-          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`combo-editar/${combo.id}`)}>
+          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`combo-editar/${combo.id}?origen=combos`)}>
           <div class="fila-lista__contenido">
             <strong class="nombre-truncado">Combo {combo.id} · {combo.nombre}</strong>
             <span class="texto-cuerpo-s fila-lista__codigo nombre-truncado" title={describirCombo(combo, productosPorId, insumosPorId)}>
@@ -131,7 +131,7 @@ function ListaInsumos({ insumos, busqueda }) {
     <ul class="lista">
       {visibles.map((insumo) => (
         <li key={insumo.id}>
-          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`insumo-editar/${insumo.id}`)}>
+          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`insumo-editar/${insumo.id}?origen=insumos`)}>
           <div class="fila-lista__contenido">
             <strong class="nombre-truncado">{insumo.nombre}</strong>
             <span class="texto-cuerpo-s fila-lista__codigo">{insumo.codigo} · {insumo.unidad}</span>
@@ -146,7 +146,7 @@ function ListaInsumos({ insumos, busqueda }) {
 }
 
 export function Productos() {
-  const [solapa, setSolapa] = useState('combos');
+  const [solapa, setSolapa] = useState(() => new URLSearchParams(globalThis.location.hash.split('?')[1] ?? '').get('solapa') ?? 'combos');
   const [busqueda, setBusqueda] = useState('');
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
