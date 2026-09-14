@@ -1,5 +1,5 @@
 /** @jsx h */
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { abrirDB, obtenerTodos, guardar } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
