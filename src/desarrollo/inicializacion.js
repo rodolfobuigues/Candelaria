@@ -1,6 +1,13 @@
 import { sembrarFixtures } from './siembraFixtures.js';
 import { abrirDB, obtenerTodos } from '../persistencia/db.js';
 import { TIENDAS } from '../persistencia/esquema.js';
+import { supabaseConfigurado } from '../config/supabase.js';
+
+export function resumirErrorInicializacion(error) {
+  const mensaje = error?.message ?? String(error);
+  const codigo = error?.code ? ` (${error.code})` : '';
+  return `${mensaje}${codigo}`;
+}
 
 // Carga una única vez la fuente vigente del 18/08/26 cuando el catálogo aún
 // está vacío o quedó incompleto antes de comenzar a registrar pedidos.
@@ -12,6 +19,9 @@ export async function cargarFuenteInicialSiHaceFalta() {
     obtenerTodos(db, TIENDAS.COMBOS),
     obtenerTodos(db, TIENDAS.PEDIDOS),
   ]);
+  if (supabaseConfigurado) {
+    return { insumos: insumos.length, productos: productos.length, combos: combos.length, sembrado: false, fuente: 'Supabase' };
+  }
   const nombresFijos = new Set(insumos.map((insumo) => insumo.nombre?.trim().toLowerCase()));
   const faltanInsumosFijos = [
     ['cera alto pf'],

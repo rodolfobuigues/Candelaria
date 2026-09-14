@@ -36,8 +36,18 @@ export async function leerXlsx(archivo) {
   for (const hoja of workbook.querySelectorAll('sheet')) {
     const nombre = hoja.getAttribute('name'); const target = mapaRelaciones.get(hoja.getAttribute('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')) ?? mapaRelaciones.get(hoja.getAttribute('r:id'));
     const ruta = target?.startsWith('/') ? target.slice(1) : `xl/${target}`; const documento = textoXml(decodificar(archivos.get(ruta)));
-    const filas = [...documento.querySelectorAll('row')].map((fila) => { const valores = []; for (const celda of fila.querySelectorAll(':scope > c')) { const indice = indiceColumna(celda.getAttribute('r')); let valor = celda.querySelector('v')?.textContent ?? ''; if (celda.getAttribute('t') === 's') valor = compartidos[Number(valor)] ?? ''; if (celda.getAttribute('t') === 'inlineStr') valor = celda.querySelector('t')?.textContent ?? ''; valores[indice] = valor; } return valores; });
-    hojas.push({ nombre, filas });
+    const filas = []; const formulas = [];
+    for (const fila of documento.querySelectorAll('row')) {
+      const valores = []; const formulasFila = [];
+      for (const celda of fila.querySelectorAll(':scope > c')) {
+        const indice = indiceColumna(celda.getAttribute('r')); let valor = celda.querySelector('v')?.textContent ?? '';
+        if (celda.getAttribute('t') === 's') valor = compartidos[Number(valor)] ?? '';
+        if (celda.getAttribute('t') === 'inlineStr') valor = celda.querySelector('t')?.textContent ?? '';
+        valores[indice] = valor; formulasFila[indice] = celda.querySelector('f')?.textContent ?? null;
+      }
+      filas.push(valores); formulas.push(formulasFila);
+    }
+    hojas.push({ nombre, filas, formulas });
   }
   return { hojas };
 }

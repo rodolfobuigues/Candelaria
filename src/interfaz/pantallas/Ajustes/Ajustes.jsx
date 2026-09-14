@@ -7,6 +7,7 @@ import { guardarParametros, obtenerParametrosVigentes } from '../../../config/pa
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { exportarRespaldo, importarRespaldo } from '../../../persistencia/respaldo.js';
 import { leerXlsx } from '../../../persistencia/xlsxLectura.js';
+import { supabase, supabaseConfigurado } from '../../../config/supabase.js';
 import { navegarA } from '../../enrutador.js';
 
 const CAMPOS = [
@@ -18,9 +19,23 @@ export function Ajustes() {
   const [parametros, setParametros] = useState(null);
   const [mensaje, setMensaje] = useState(null);
   const [revision, setRevision] = useState(null);
+  const [conteos, setConteos] = useState(null);
   useEffect(() => { abrirDB().then(obtenerParametrosVigentes).then(setParametros); }, []);
+  async function actualizarConteos() {
+    const db = await abrirDB();
+    const [insumos, productos, combos] = await Promise.all([
+      obtenerTodos(db, TIENDAS.INSUMOS), obtenerTodos(db, TIENDAS.PRODUCTOS), obtenerTodos(db, TIENDAS.COMBOS),
+    ]);
+    setConteos({ insumos: insumos.length, productos: productos.length, combos: combos.length });
+  }
+  useEffect(() => { actualizarConteos().catch((e) => setMensaje(`No se pudo consultar el catálogo: ${e.message}`)); }, []);
   async function guardarCambios() {
     const db = await abrirDB(); await guardarParametros(db, parametros); invalidarCatalogo(); setMensaje('Parámetros guardados. El catálogo se recalculará al volver a abrirlo.');
+  }
+  async function cerrarSesion() {
+    if (!supabaseConfigurado) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) setMensaje(`No se pudo cerrar la sesión: ${error.message}`);
   }
   async function exportar() {
     const db = await abrirDB(); const respaldo = await exportarRespaldo(db); const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' }); const enlace = document.createElement('a'); enlace.href = URL.createObjectURL(blob); enlace.download = `respaldo-candelaria-${new Date().toISOString().slice(0, 10)}.json`; enlace.click(); URL.revokeObjectURL(enlace.href);
@@ -66,6 +81,7 @@ export function Ajustes() {
       if (tipo === 'productos') for (const fila of filas) await guardar(db, TIENDAS.PRODUCTOS, { id: fila.codigo, codigo: fila.codigo, nombre: fila.nombre, categoria: fila.categoria, ceraAltoPF: Number(fila.ceraAltoPF), ceraBajoPF: Number(fila.ceraBajoPF), pabilo: Number(fila.pabilo), yeso: Number(fila.yeso), minutosManoObra: Number(fila.minutosManoObra), recipienteCosto: Number(fila.recipienteCosto), recipienteCantidad: Number(fila.recipienteCantidad), heredaCostoDe: null, extras: [], activo: true });
       if (tipo === 'combos') for (const fila of filas) await guardar(db, TIENDAS.COMBOS, { id: fila.id, nombre: fila.nombre, lineas: JSON.parse(fila.lineas), activo: true });
       invalidarCatalogo(); setMensaje(`Se importaron ${filas.length} registros de ${tipo}.`);
+      await actualizarConteos();
     } catch (e) { setMensaje(`No se pudo importar ${tipo}: ${e.message}`); } finally { evento.currentTarget.value = ''; }
   }
   async function revisarExcel(evento) {
@@ -84,6 +100,6 @@ export function Ajustes() {
     <section class="ajustes-seccion"><h2 class="texto-seccion">Mensajes</h2>{['confirmacion', 'pago', 'recordatorio'].map((id) => <button type="button" class="fila-ajuste" key={id} onClick={() => navegarA(`plantilla/${id}`)}><span>{id[0].toUpperCase() + id.slice(1)}</span><span>›</span></button>)}</section>
     {mensaje && <p class="aviso aviso--info">{mensaje}</p>}
     {revision && <section class="tarjeta importacion-revision"><h2 class="texto-seccion">Revisar importación</h2><span class="texto-cuerpo-s">{revision.nombre}</span><ul class="importacion-hojas">{revision.hojas.map((hoja) => <li key={hoja.nombre}><span>{hoja.nombre}</span><strong>{hoja.filas} filas</strong></li>)}</ul>{revision.pendientes.length > 0 ? <><h3 class="texto-seccion">Casos para consultar</h3><ul class="importacion-pendientes">{revision.pendientes.map((pendiente) => <li key={pendiente}>{pendiente}</li>)}</ul></> : <p class="texto-cuerpo-s">No se detectaron casos estructurales pendientes. La aplicación todavía no aplicó la planilla.</p>}</section>}
-    <section class="ajustes-seccion"><h2 class="texto-seccion">Datos</h2><button type="button" class="fila-ajuste" onClick={exportar}><span>Respaldo</span><span>Descargar JSON</span></button><label class="fila-ajuste"><span>Importar respaldo JSON</span><input type="file" accept="application/json,.json" onChange={importar} /></label><button type="button" class="fila-ajuste" onClick={exportarCSV}><span>Exportar para Excel</span><span>CSV</span></button><label class="fila-ajuste"><span>Revisar planilla Excel</span><input type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" onChange={revisarExcel} /></label><label class="fila-ajuste"><span>Importar insumos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'insumos')} /></label><label class="fila-ajuste"><span>Importar productos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'productos')} /></label><label class="fila-ajuste"><span>Importar combos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'combos')} /></label></section>
+    <section class="ajustes-seccion"><h2 class="texto-seccion">Datos</h2>{conteos && <div class="tarjeta"><h3 class="texto-seccion">Catálogo actual</h3><p class="texto-cuerpo-s">Insumos: {conteos.insumos} · Productos: {conteos.productos} · Combos: {conteos.combos}</p><button type="button" class="boton-secundario" onClick={() => actualizarConteos().catch((e) => setMensaje(`No se pudo consultar el catálogo: ${e.message}`))}>Actualizar conteos</button></div>}<button type="button" class="fila-ajuste" onClick={exportar}><span>Respaldo</span><span>Descargar JSON</span></button><label class="fila-ajuste"><span>Importar respaldo JSON</span><input type="file" accept="application/json,.json" onChange={importar} /></label><button type="button" class="fila-ajuste" onClick={exportarCSV}><span>Exportar para Excel</span><span>CSV</span></button><label class="fila-ajuste"><span>Revisar planilla Excel</span><input type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" onChange={revisarExcel} /></label><label class="fila-ajuste"><span>Importar insumos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'insumos')} /></label><label class="fila-ajuste"><span>Importar productos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'productos')} /></label><label class="fila-ajuste"><span>Importar combos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'combos')} /></label>{supabaseConfigurado && <button type="button" class="boton-secundario" onClick={cerrarSesion}>Cerrar sesión</button>}</section>
   </section>;
 }

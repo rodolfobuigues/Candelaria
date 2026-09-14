@@ -1,6 +1,6 @@
 # Candelaria — Estado del proyecto
 
-**Actualizado: 09/09/2026**
+**Actualizado: 14/09/2026**
 
 Documento vivo. Se actualiza al cerrar cada fase. Es lo primero que hay que leer
 al abrir un chat nuevo.
@@ -25,6 +25,10 @@ Las fixtures del repositorio fueron regeneradas desde esa versión: 29 insumos,
 79 productos y 21 combos. Se excluyeron los combos vacíos 24 y 25 y los
 duplicados exactos 6 (igual al 4) y 22 (igual al 14). No se mezclaron datos de
 la planilla anterior.
+
+Desde el 14/09/2026, Supabase es la fuente vigente del catálogo. Las cantidades
+anteriores son solo referencia histórica y no deben validarse como límites ni
+usarse para sobrescribir el catálogo remoto.
 
 ---
 
@@ -59,6 +63,7 @@ src/persistencia/pedidoLogica.js          funciones puras de pedido
 src/persistencia/pedidosRepo.js           lectura con derivados
 src/persistencia/respaldo.js              exportar/importar JSON
 src/persistencia/catalogoRepo.js          catálogo con costo y precio derivados, memoizado
+src/persistencia/importadorFuente.js      conversión exclusiva del Excel vigente 18/08/2026
 src/persistencia/catalogoRepo.test.js
 src/desarrollo/siembra.js                 carga las fixtures en IndexedDB (solo desarrollo)
 src/desarrollo/siembraFixtures.js

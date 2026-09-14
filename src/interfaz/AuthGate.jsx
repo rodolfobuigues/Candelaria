@@ -2,7 +2,7 @@
 import { h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { supabase, supabaseConfigurado } from '../config/supabase.js';
-import { cargarFuenteInicialSiHaceFalta } from '../desarrollo/inicializacion.js';
+import { cargarFuenteInicialSiHaceFalta, resumirErrorInicializacion } from '../desarrollo/inicializacion.js';
 import { App } from './App.jsx';
 
 export function AuthGate() {
@@ -13,6 +13,10 @@ export function AuthGate() {
   const [cargando, setCargando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(false);
   const [datosInicializados, setDatosInicializados] = useState(false);
+
+  useEffect(() => {
+    if (!sesion) setDatosInicializados(false);
+  }, [sesion]);
 
   useEffect(() => {
     if (!supabaseConfigurado) { setSesion(null); return undefined; }
@@ -30,7 +34,7 @@ export function AuthGate() {
       .then(() => activo && setDatosInicializados(true))
       .catch((errorInicializacion) => {
         console.error('No se pudo cargar el catálogo inicial.', errorInicializacion);
-        if (activo) setError('No se pudo cargar el catálogo. Revisá que hayas ejecutado supabase/schema.sql.');
+        if (activo) setError(`No se pudo cargar el catálogo: ${resumirErrorInicializacion(errorInicializacion)}. Revisá las políticas RLS y que hayas ejecutado supabase/schema.sql.`);
       })
       .finally(() => activo && setCargandoDatos(false));
     return () => { activo = false; };
