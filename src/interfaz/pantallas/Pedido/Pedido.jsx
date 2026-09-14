@@ -3,7 +3,7 @@ import { h } from 'preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { abrirDB } from '../../../persistencia/db.js';
 import { obtenerPedido, guardarPedido } from '../../../persistencia/pedidosRepo.js';
-import { calcularDerivados, marcarEntregado } from '../../../persistencia/pedidoLogica.js';
+import { calcularDerivados, marcarEntregado, registrarMensaje } from '../../../persistencia/pedidoLogica.js';
 import { formatearFecha, formatearFechaHora, formatearImporte } from '../../../config/formato.js';
 import { construirMensajePedido } from '../Mensaje/Mensaje.jsx';
 import { navegarA } from '../../enrutador.js';
@@ -75,6 +75,27 @@ function Historial({ pedido }) {
   );
 }
 
+function MensajesGenerados({ pedido, copiar }) {
+  const mensajes = [...pedido.historial]
+    .filter((evento) => evento.tipo === 'MENSAJE_GENERADO' && evento.texto)
+    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  if (mensajes.length === 0) return null;
+  return (
+    <section class="ficha-seccion">
+      <h2 class="texto-seccion">Mensajes generados</h2>
+      <ul class="pedido-mensajes">
+        {mensajes.map((evento) => (
+          <li key={evento.id ?? evento.fecha}>
+            <span class="texto-cuerpo-s">{formatearFechaHora(evento.fecha)}</span>
+            <pre class="mensaje-contenido">{evento.texto}</pre>
+            <button type="button" class="boton-secundario" onClick={() => copiar(evento)}>Copiar mensaje</button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function Pedido({ id }) {
   const [pedido, setPedido] = useState(null);
   const [error, setError] = useState(null);
@@ -116,9 +137,16 @@ export function Pedido({ id }) {
     actualizar((actual, fecha) => marcarEntregado(actual, fecha));
   }
 
-  async function copiarMensaje() {
+  async function copiarMensaje(evento = null) {
     try {
-      await globalThis.navigator.clipboard.writeText(mensaje);
+      const texto = evento?.texto ?? mensaje;
+      await globalThis.navigator.clipboard.writeText(texto);
+      if (!evento) {
+        const db = await abrirDB();
+        const registrado = registrarMensaje(pedido, { id: globalThis.crypto?.randomUUID?.() ?? `mensaje-${Date.now()}`, fecha: new Date().toISOString(), texto });
+        await guardarPedido(db, registrado);
+        setPedido({ ...registrado, ...calcularDerivados(registrado) });
+      }
     } catch (e) {
       setError('No se pudo copiar el mensaje en este dispositivo.');
     }
@@ -154,6 +182,7 @@ export function Pedido({ id }) {
       </section>
 
       <BloquePagos pedido={pedido} registrar={() => navegarA(`pago/${pedido.id}`)} />
+      <MensajesGenerados pedido={pedido} copiar={copiarMensaje} />
       <Historial pedido={pedido} />
 
       {error && <p class="aviso">{error}</p>}

@@ -148,3 +148,14 @@ export function marcarEntregado(pedido, fecha) {
 
   return { ...pedido, estadoEntrega: 'ENTREGADO', historial };
 }
+
+export function registrarMensaje(pedido, { id, fecha, texto }) {
+  const historial = agregarEventoHistorial(
+    pedido.historial,
+    'MENSAJE_GENERADO',
+    fecha,
+    `Mensaje generado para el pedido #${pedido.numero}.`
+  );
+  const ultimo = historial[historial.length - 1];
+  return { ...pedido, historial: [...historial.slice(0, -1), { ...ultimo, id, texto }] };
+}

@@ -4,6 +4,10 @@ import { useEffect, useState } from 'preact/hooks';
 import { abrirDB, guardar, obtenerPorId, obtenerTodos } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
+import { obtenerCatalogo } from '../../../persistencia/catalogoRepo.js';
+import { obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
+import { calcularIndicadores } from '../../../motor/calculo.js';
+import { formatearImporte } from '../../../config/formato.js';
 import { navegarA } from '../../enrutador.js';
 import { GaleriaFotos } from '../../comun/GaleriaFotos.jsx';
 
@@ -12,24 +16,45 @@ function nuevoId(combos) {
   return String(mayor + 1);
 }
 
+function numeroTexto(numero, decimales = 1) {
+  return new Intl.NumberFormat('es-AR', { maximumFractionDigits: decimales, minimumFractionDigits: 0 }).format(numero);
+}
+
 export function ComboForm({ id = null }) {
   const editando = Boolean(id);
   const [form, setForm] = useState({ id: id ?? '', nombre: 'vela aromatica', lineas: [], fotos: [] });
   const [opciones, setOpciones] = useState([]);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [resumen, setResumen] = useState(null);
 
   useEffect(() => {
     let activo = true;
     async function cargar() {
       try {
         const db = await abrirDB();
-        const [productos, insumos, combos] = await Promise.all([obtenerTodos(db, TIENDAS.PRODUCTOS), obtenerTodos(db, TIENDAS.INSUMOS), obtenerTodos(db, TIENDAS.COMBOS)]);
+        const [productos, insumos, combos, parametros] = await Promise.all([obtenerTodos(db, TIENDAS.PRODUCTOS), obtenerTodos(db, TIENDAS.INSUMOS), obtenerTodos(db, TIENDAS.COMBOS), obtenerParametrosVigentes(db)]);
+        const catalogo = await obtenerCatalogo(db, parametros);
         if (!activo) return;
         setOpciones([...productos.map((item) => ({ ...item, tipo: 'PRODUCTO', etiqueta: `${item.nombre} (${item.codigo})` })), ...insumos.map((item) => ({ ...item, tipo: 'INSUMO', etiqueta: `${item.nombre} (${item.codigo})` }))]);
         if (id) {
           const combo = combos.find((item) => item.id === id);
-          if (combo) setForm({ id: combo.id, nombre: combo.nombre, lineas: combo.lineas, fotos: combo.fotos ?? [] });
+          if (combo) {
+            setForm({ id: combo.id, nombre: combo.nombre, lineas: combo.lineas, fotos: combo.fotos ?? [] });
+            const derivado = catalogo.combos.find((item) => item.id === id);
+            const productosPorId = new Map(catalogo.productos.map((item) => [item.id, item]));
+            const insumosPorId = new Map(insumos.map((item) => [item.id, item]));
+            const desglose = combo.lineas.reduce((total, linea) => {
+              const producto = linea.tipo === 'PRODUCTO' ? productosPorId.get(linea.refId) : null;
+              const costoInsumo = linea.tipo === 'INSUMO' ? insumosPorId.get(linea.refId)?.montoCompra / insumosPorId.get(linea.refId)?.cantidadCompra : 0;
+              return {
+                materiales: total.materiales + (producto ? producto.materiales : costoInsumo) * linea.cantidad,
+                manoObra: total.manoObra + (producto?.manoObra ?? 0) * linea.cantidad,
+                minutos: total.minutos + (producto?.minutosManoObra ?? 0) * linea.cantidad,
+              };
+            }, { materiales: 0, manoObra: 0, minutos: 0 });
+            setResumen({ combo: derivado, indicadores: calcularIndicadores({ precio: derivado.precioCombo, subtotal: derivado.costoCombo, ...desglose }), ...desglose });
+          }
         } else setForm((actual) => ({ ...actual, id: nuevoId(combos) }));
       } catch (e) { if (activo) setError(e.message); }
     }
@@ -70,6 +95,7 @@ export function ComboForm({ id = null }) {
         ))}
       </div>
       <GaleriaFotos fotos={form.fotos} cambiar={(fotos) => setForm((actual) => ({ ...actual, fotos }))} />
+      {resumen && <section class="tarjeta ficha-seccion"><h2 class="texto-seccion">Datos del combo</h2><dl class="ficha-costos"><div><dt>Costo de componentes</dt><dd>{formatearImporte(resumen.combo.costoCombo)}</dd></div><div><dt>Mano de obra · {numeroTexto(resumen.minutos, 0)} min</dt><dd>{formatearImporte(resumen.manoObra)}</dd></div><div class="ficha-costos__total"><dt>Precio de venta</dt><dd>{formatearImporte(resumen.combo.precioCombo)}</dd></div></dl><div class="ficha-indicadores"><div class="indicador"><span class="etiqueta">Margen sobre costo</span><strong>{numeroTexto(resumen.indicadores.margenSobreCosto * 100)} %</strong></div><div class="indicador"><span class="etiqueta">Peso mano de obra</span><strong>{numeroTexto(resumen.indicadores.pesoManoObra * 100)} %</strong></div><div class="indicador"><span class="etiqueta">Beneficio bruto</span><strong>{formatearImporte(resumen.indicadores.beneficioBruto)}</strong></div><div class="indicador"><span class="etiqueta">Beneficio neto</span><strong>{formatearImporte(resumen.indicadores.beneficioNeto)}</strong></div><div class="indicador"><span class="etiqueta">Minutos mano de obra</span><strong>{numeroTexto(resumen.minutos, 0)} min</strong></div></div></section>}
       <button type="button" class="boton-secundario" onClick={agregarLinea}>Agregar componente</button>
       {error && <p class="aviso">{error}</p>}
       <button type="button" class="boton-primario" disabled={guardando} onClick={guardarCombo}>Guardar combo</button>

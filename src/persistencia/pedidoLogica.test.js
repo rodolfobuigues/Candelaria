@@ -6,6 +6,7 @@ import {
   anularPago,
   marcarEntregado,
   calcularDerivados,
+  registrarMensaje,
 } from './pedidoLogica.js';
 
 function pedidoDeEjemplo() {
@@ -185,4 +186,12 @@ describe('calcularDerivados', () => {
     assert.equal(derivados.pagado, 0);
     assert.equal(derivados.saldo, 39500);
   });
+});
+
+test('registrar mensaje conserva el texto completo en el historial', () => {
+  const pedido = pedidoDeEjemplo();
+  const resultado = registrarMensaje(pedido, { id: 'm1', fecha: '2026-09-14T10:00:00Z', texto: 'Hola\nTotal: $ 1.000' });
+  const mensaje = resultado.historial.find((evento) => evento.tipo === 'MENSAJE_GENERADO');
+  assert.equal(mensaje.id, 'm1');
+  assert.equal(mensaje.texto, 'Hola\nTotal: $ 1.000');
 });

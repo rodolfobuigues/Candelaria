@@ -146,6 +146,7 @@ export function FichaProducto({ codigo }) {
         <Indicador etiqueta="Peso mano de obra" valor={`${numeroTexto(indicadores.pesoManoObra * 100, 1)} %`} />
         <Indicador etiqueta="Beneficio bruto" valor={formatearImporte(indicadores.beneficioBruto)} />
         <Indicador etiqueta="Beneficio neto" valor={formatearImporte(indicadores.beneficioNeto)} />
+        <Indicador etiqueta="Minutos mano de obra" valor={`${numeroTexto(producto.minutosManoObra, 0)} min`} />
       </section>
 
       <button type="button" class="boton-secundario" onClick={() => navegarA(`producto-editar/${producto.codigo}`)}>Editar receta</button>

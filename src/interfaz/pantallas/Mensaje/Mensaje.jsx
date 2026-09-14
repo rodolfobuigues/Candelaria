@@ -2,7 +2,8 @@
 import { h } from 'preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { abrirDB } from '../../../persistencia/db.js';
-import { obtenerPedido } from '../../../persistencia/pedidosRepo.js';
+import { obtenerPedido, guardarPedido } from '../../../persistencia/pedidosRepo.js';
+import { registrarMensaje, calcularDerivados } from '../../../persistencia/pedidoLogica.js';
 import { formatearImporte } from '../../../config/formato.js';
 
 export function construirMensajePedido(pedido) {
@@ -23,7 +24,10 @@ export function Mensaje({ id }) {
         const db = await abrirDB();
         const resultado = await obtenerPedido(db, id);
         if (!resultado) throw new Error('No encontramos ese pedido.');
-        if (activo) setPedido(resultado);
+        const texto = construirMensajePedido(resultado);
+        const registrado = registrarMensaje(resultado, { id: globalThis.crypto?.randomUUID?.() ?? `mensaje-${Date.now()}`, fecha: new Date().toISOString(), texto });
+        await guardarPedido(db, registrado);
+        if (activo) setPedido({ ...resultado, ...registrado, ...calcularDerivados(registrado) });
       } catch (e) {
         if (activo) setError(e.message);
       }
