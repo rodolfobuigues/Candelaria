@@ -6,8 +6,9 @@ import { TIENDAS } from '../../../persistencia/esquema.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { obtenerCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
-import { calcularIndicadores } from '../../../motor/calculo.js';
-import { formatearImporte } from '../../../config/formato.js';
+import { calcularCostoCombo, calcularIndicadores } from '../../../motor/calculo.js';
+import { construirDesgloseCombo } from '../../../motor/desgloseCombo.js';
+import { formatearImporte, formatearCostoUnitario } from '../../../config/formato.js';
 import { navegarA } from '../../enrutador.js';
 import { GaleriaFotos } from '../../comun/GaleriaFotos.jsx';
 
@@ -27,6 +28,7 @@ export function ComboForm({ id = null }) {
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [resumen, setResumen] = useState(null);
+  const [contextoCalculo, setContextoCalculo] = useState(null);
 
   useEffect(() => {
     let activo = true;
@@ -43,31 +45,43 @@ export function ComboForm({ id = null }) {
         const catalogo = await obtenerCatalogo(db, parametros);
         if (!activo) return;
         setOpciones([...productos.map((item) => ({ ...item, tipo: 'PRODUCTO', etiqueta: `${item.nombre} (${item.codigo})` })), ...insumos.map((item) => ({ ...item, tipo: 'INSUMO', etiqueta: `${item.nombre} (${item.codigo})` }))]);
+        setContextoCalculo({ productos: catalogo.productos, productosBase: productos, insumos, parametros });
         if (id) {
           const combo = comboSeleccionado;
           if (combo) {
             setForm({ id: combo.id, nombre: combo.nombre, lineas: combo.lineas, fotos: combo.fotos ?? [] });
-            const derivado = catalogo.combos.find((item) => String(item.id) === String(id));
-            const productosPorId = new Map(catalogo.productos.map((item) => [item.id, item]));
-            const insumosPorId = new Map(insumos.map((item) => [item.id, item]));
-            const desglose = combo.lineas.reduce((total, linea) => {
-              const producto = linea.tipo === 'PRODUCTO' ? productosPorId.get(linea.refId) : null;
-              const insumo = linea.tipo === 'INSUMO' ? insumosPorId.get(linea.refId) : null;
-              const costoInsumo = insumo ? insumo.montoCompra / insumo.cantidadCompra : 0;
-              return {
-                materiales: total.materiales + (producto ? producto.materiales : costoInsumo) * linea.cantidad,
-                manoObra: total.manoObra + (producto?.manoObra ?? 0) * linea.cantidad,
-                minutos: total.minutos + (producto?.minutosManoObra ?? 0) * linea.cantidad,
-                componentes: [...total.componentes, { nombre: producto?.nombre ?? insumo?.nombre ?? linea.refId, cantidad: linea.cantidad, costo: (producto ? producto.materiales : costoInsumo) * linea.cantidad }],
-              };
-            }, { materiales: 0, manoObra: 0, minutos: 0, componentes: [] });
-            setResumen({ combo: derivado, indicadores: calcularIndicadores({ precio: derivado.precioCombo, subtotal: derivado.costoCombo, ...desglose }), ...desglose });
           }
         } else setForm((actual) => ({ ...actual, id: nuevoId(combos) }));
       } catch (e) { if (activo) setError(e.message); }
     }
     cargar(); return () => { activo = false; };
   }, [id]);
+
+  useEffect(() => {
+    if (!contextoCalculo || form.lineas.length === 0) {
+      setResumen(null);
+      return;
+    }
+    try {
+      const { productos, productosBase, insumos, parametros } = contextoCalculo;
+      const productosPorId = new Map(productos.map((producto) => [String(producto.id), producto]));
+      const insumosPorId = new Map(insumos.map((insumo) => [String(insumo.id), insumo]));
+      const lineasConCosto = form.lineas.map((linea) => {
+        const costoUnit = linea.tipo === 'PRODUCTO'
+          ? productosPorId.get(String(linea.refId))?.costoProduccion
+          : insumosPorId.get(String(linea.refId))?.montoCompra / insumosPorId.get(String(linea.refId))?.cantidadCompra;
+        if (!Number.isFinite(costoUnit)) throw new Error(`No se pudo calcular el componente ${linea.refId}.`);
+        return { ...linea, costoUnit };
+      });
+      const comboCalculado = calcularCostoCombo(lineasConCosto, parametros);
+      const desglose = construirDesgloseCombo({ combo: form, productos, productosBase, insumos });
+      setResumen({ combo: comboCalculado, indicadores: calcularIndicadores({ precio: comboCalculado.precioCombo, subtotal: comboCalculado.costoCombo, ...desglose }), ...desglose });
+      setError(null);
+    } catch (e) {
+      setResumen(null);
+      setError(e.message);
+    }
+  }, [contextoCalculo, form.lineas]);
 
   function agregarLinea() {
     const opcion = opciones[0];
@@ -103,7 +117,7 @@ export function ComboForm({ id = null }) {
         ))}
       </div>
       <GaleriaFotos fotos={form.fotos} cambiar={(fotos) => setForm((actual) => ({ ...actual, fotos }))} />
-      {resumen && <><div class="ficha-producto__identidad combo-precio"><span class="etiqueta">Precio de venta</span><strong class="importe-l ficha-producto__precio">{formatearImporte(resumen.combo.precioCombo)}</strong></div><section class="tarjeta ficha-seccion"><h2 class="texto-seccion">Datos del combo</h2><ul class="lista ficha-lista">{resumen.componentes.map((componente) => <li class="fila-lista" key={`${componente.nombre}-${componente.cantidad}`}><div class="fila-lista__contenido"><strong class="nombre-truncado">{componente.nombre}</strong><span class="texto-cuerpo-s fila-lista__codigo">Cantidad: {numeroTexto(componente.cantidad, 2)}</span></div><span class="importe">{formatearImporte(componente.costo)}</span></li>)}</ul><dl class="ficha-costos"><div><dt>Costo de componentes</dt><dd>{formatearImporte(resumen.materiales)}</dd></div><div><dt>Mano de obra · {numeroTexto(resumen.minutos, 0)} min</dt><dd>{formatearImporte(resumen.manoObra)}</dd></div></dl><div class="ficha-indicadores"><div class="indicador"><span class="etiqueta">Margen sobre costo</span><strong>{numeroTexto(resumen.indicadores.margenSobreCosto * 100)} %</strong></div><div class="indicador"><span class="etiqueta">Peso mano de obra</span><strong>{numeroTexto(resumen.indicadores.pesoManoObra * 100)} %</strong></div><div class="indicador"><span class="etiqueta">Beneficio bruto</span><strong>{formatearImporte(resumen.indicadores.beneficioBruto)}</strong></div><div class="indicador"><span class="etiqueta">Beneficio neto</span><strong>{formatearImporte(resumen.indicadores.beneficioNeto)}</strong></div><div class="indicador"><span class="etiqueta">Minutos mano de obra</span><strong>{numeroTexto(resumen.minutos, 0)} min</strong></div></div></section></>}
+      {resumen && <><div class="ficha-producto__identidad combo-precio"><span class="etiqueta">Precio de venta</span><strong class="importe-l ficha-producto__precio">{formatearImporte(resumen.combo.precioCombo)}</strong></div><section class="tarjeta ficha-seccion"><h2 class="texto-seccion">Datos del combo</h2><h3 class="texto-seccion">Insumos necesarios</h3><ul class="lista ficha-lista">{resumen.insumos.map((insumo) => <li class="fila-lista" key={insumo.id}><div class="fila-lista__contenido"><strong class="nombre-truncado">{insumo.nombre}</strong><span class="texto-cuerpo-s fila-lista__codigo">Cantidad total: {numeroTexto(insumo.cantidad, 6)} {insumo.unidad}</span></div><span class="importe">{formatearCostoUnitario(insumo.costo)}</span></li>)}</ul><dl class="ficha-costos"><div><dt>Costo de componentes</dt><dd>{formatearImporte(resumen.materiales)}</dd></div><div><dt>Mano de obra · {numeroTexto(resumen.minutos, 0)} min</dt><dd>{formatearImporte(resumen.manoObra)}</dd></div></dl><div class="ficha-indicadores"><div class="indicador"><span class="etiqueta">Margen sobre costo</span><strong>{numeroTexto(resumen.indicadores.margenSobreCosto * 100)} %</strong></div><div class="indicador"><span class="etiqueta">Peso mano de obra</span><strong>{numeroTexto(resumen.indicadores.pesoManoObra * 100)} %</strong></div><div class="indicador"><span class="etiqueta">Beneficio bruto</span><strong>{formatearImporte(resumen.indicadores.beneficioBruto)}</strong></div><div class="indicador"><span class="etiqueta">Beneficio neto</span><strong>{formatearImporte(resumen.indicadores.beneficioNeto)}</strong></div><div class="indicador"><span class="etiqueta">Minutos mano de obra</span><strong>{numeroTexto(resumen.minutos, 0)} min</strong></div></div></section></>}
       <button type="button" class="boton-secundario" onClick={agregarLinea}>Agregar componente</button>
       {error && <p class="aviso">{error}</p>}
       <button type="button" class="boton-primario" disabled={guardando} onClick={guardarCombo}>Guardar combo</button>
