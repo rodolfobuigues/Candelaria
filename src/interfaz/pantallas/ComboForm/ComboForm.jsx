@@ -13,6 +13,7 @@ import { navegarA } from '../../enrutador.js';
 import { GaleriaFotos } from '../../comun/GaleriaFotos.jsx';
 import { guardarFotosEnStorage } from '../../../persistencia/fotosStorage.js';
 import { supabaseConfigurado } from '../../../config/supabase.js';
+import { sincronizarCatalogoPublico } from '../../../persistencia/catalogoPublicoRepo.js';
 
 function nuevoId(combos) {
   const mayor = combos.reduce((maximo, combo) => Math.max(maximo, Number(combo.id) || 0), 0);
@@ -102,7 +103,7 @@ export function ComboForm({ id = null }) {
       const registro = { id: form.id, nombre: form.nombre.trim(), activo: true, lineas: form.lineas, fotos: form.fotos };
       const conFotos = supabaseConfigurado ? await guardarFotosEnStorage(registro, 'combos') : registro;
       await guardar(db, TIENDAS.COMBOS, conFotos);
-      invalidarCatalogo(); navegarA('productos');
+      invalidarCatalogo(); await sincronizarCatalogoPublico(db); navegarA('productos');
     } catch (e) { setError(e.message); } finally { setGuardando(false); }
   }
 

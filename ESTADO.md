@@ -17,7 +17,7 @@ al abrir un chat nuevo.
 | Tests | `npm test` en verde el 14/09/2026 |
 | Compilación | `npm run build` correcta el 14/09/2026 |
 | Estado actual | Catálogo, costos, pedidos, mensajes, fotos y ajustes conectados a Supabase |
-| Próximo paso | Separar el catálogo público de combos del panel privado y completar la instalación PWA en Android |
+| Próximo paso | Completar la instalación PWA y su validación real en Android |
 
 ### Fuente de datos vigente
 
@@ -47,6 +47,7 @@ usarse para sobrescribir el catálogo remoto.
 | 6 — PWA publicada | 🔄 | GitHub Pages activo; faltan iconos del manifest y validación final desde Android |
 | 7 — Supabase | ✅ | Autenticación, tablas, RLS y catálogo remoto vigentes |
 | 8 — Endurecimiento | 🔄 | Correcciones de pedidos, navegación, mensajes, restauración protegida y transición de fotos a Storage |
+| 9 — Catálogo público | ✅ | Proyección pública exclusiva de combos; recetas, costos, pedidos y ajustes requieren autenticación |
 
 ---
 
@@ -65,6 +66,7 @@ src/persistencia/pedidoLogica.js          funciones puras de pedido
 src/persistencia/pedidosRepo.js           lectura con derivados
 src/persistencia/respaldo.js              exportar/importar JSON
 src/persistencia/catalogoRepo.js          catálogo con costo y precio derivados, memoizado
+src/persistencia/catalogoPublicoRepo.js   proyección comercial de combos sin recetas ni costos
 src/persistencia/importadorFuente.js      conversión exclusiva del Excel vigente 18/08/2026
 src/persistencia/catalogoRepo.test.js
 src/desarrollo/siembra.js                 carga las fixtures en IndexedDB (solo desarrollo)
@@ -188,6 +190,10 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
     archivo, descarga una copia previa, guarda primero el contenido de destino,
     elimina después únicamente los identificadores sobrantes y trata de
     restaurar automáticamente el estado original ante una falla.
+19. **El catálogo público no consulta `productos` ni `combos` directamente.**
+    Lee `catalogo_publico_combos`, una proyección con nombre, descripción,
+    precio y fotos. El panel autenticado la sincroniza con el motor vigente al
+    iniciar sesión y después de cada cambio que afecta precios o contenido.
 
 ---
 
@@ -195,7 +201,6 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 
 | Pendiente | Cuándo |
 |---|---|
-| Separar el catálogo público de combos del panel autenticado, sin exponer costos, pedidos ni ajustes | Próxima prioridad funcional |
 | Ejecutar desde Ajustes la revisión de fotos Base64 y, si el resultado es correcto, iniciar la migración resumible a Storage | Operación manual del creador |
 | Agregar iconos al manifest, aviso de actualización y `navigator.storage.persist()` | PWA |
 | Verificar instalación, navegación, fotos y actualización desde Android sobre GitHub Pages | Validación final PWA |

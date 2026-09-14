@@ -4,8 +4,13 @@ import { useEffect, useState } from 'preact/hooks';
 import { supabase, supabaseConfigurado } from '../config/supabase.js';
 import { cargarFuenteInicialSiHaceFalta, resumirErrorInicializacion } from '../desarrollo/inicializacion.js';
 import { App } from './App.jsx';
+import { abrirDB } from '../persistencia/db.js';
+import { sincronizarCatalogoPublico } from '../persistencia/catalogoPublicoRepo.js';
+import { CatalogoPublico } from './pantallas/CatalogoPublico/CatalogoPublico.jsx';
+import { navegarA, useRuta } from './enrutador.js';
 
 export function AuthGate() {
+  const ruta = useRuta().split('?')[0];
   const [sesion, setSesion] = useState(undefined);
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -31,6 +36,7 @@ export function AuthGate() {
     let activo = true;
     setCargandoDatos(true);
     cargarFuenteInicialSiHaceFalta()
+      .then(async () => sincronizarCatalogoPublico(await abrirDB()))
       .then(() => activo && setDatosInicializados(true))
       .catch((errorInicializacion) => {
         console.error('No se pudo cargar el catálogo inicial.', errorInicializacion);
@@ -45,6 +51,7 @@ export function AuthGate() {
     setCargando(true); setError(null);
     const { error: errorIngreso } = await supabase.auth.signInWithPassword({ email: correo.trim(), password: contrasena });
     if (errorIngreso) setError('Correo o contraseña incorrectos.');
+    else navegarA('vender');
     setCargando(false);
   }
 
@@ -52,6 +59,7 @@ export function AuthGate() {
   if (sesion && cargandoDatos) return <main class="auth-pantalla"><p class="texto-cuerpo-s">Cargando catálogo…</p></main>;
   if (sesion && datosInicializados) return <App />;
   if (sesion === undefined) return <main class="auth-pantalla"><p class="texto-cuerpo-s">Comprobando acceso…</p></main>;
+  if (ruta === 'catalogo') return <CatalogoPublico />;
 
   return (
     <main class="auth-pantalla">
@@ -63,6 +71,7 @@ export function AuthGate() {
           <label class="campo-entrada"><span>Contraseña</span><input type="password" value={contrasena} onInput={(e) => setContrasena(e.currentTarget.value)} required /></label>
           {error && <p class="aviso">{error}</p>}
           <button type="submit" class="boton-primario" disabled={cargando}>{cargando ? 'Ingresando…' : 'Ingresar'}</button>
+          <button type="button" class="boton-secundario" onClick={() => navegarA('catalogo')}>Volver al catálogo</button>
         </form>
       </section>
     </main>

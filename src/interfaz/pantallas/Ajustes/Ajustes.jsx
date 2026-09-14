@@ -9,6 +9,7 @@ import { exportarRespaldo, importarRespaldo, validarRespaldo } from '../../../pe
 import { leerXlsx } from '../../../persistencia/xlsxLectura.js';
 import { supabase, supabaseConfigurado } from '../../../config/supabase.js';
 import { migrarFotosCatalogo, revisarMigracionFotos } from '../../../persistencia/fotosStorage.js';
+import { sincronizarCatalogoPublico } from '../../../persistencia/catalogoPublicoRepo.js';
 import { navegarA } from '../../enrutador.js';
 
 const CAMPOS = [
@@ -43,12 +44,13 @@ export function Ajustes() {
   }
   useEffect(() => { actualizarConteos().catch((e) => setMensaje(`No se pudo consultar el catálogo: ${e.message}`)); }, []);
   async function guardarCambios() {
-    const db = await abrirDB(); await guardarParametros(db, parametros); invalidarCatalogo(); setMensaje('Parámetros guardados. El catálogo se recalculará al volver a abrirlo.');
+    const db = await abrirDB(); await guardarParametros(db, parametros); invalidarCatalogo(); await sincronizarCatalogoPublico(db); setMensaje('Parámetros guardados. El catálogo público también fue actualizado.');
   }
   async function cerrarSesion() {
     if (!supabaseConfigurado) return;
     const { error } = await supabase.auth.signOut();
     if (error) setMensaje(`No se pudo cerrar la sesión: ${error.message}`);
+    else navegarA('catalogo');
   }
   async function exportar() {
     const db = await abrirDB(); const respaldo = await exportarRespaldo(db); descargarRespaldoJSON(respaldo);
@@ -71,6 +73,7 @@ export function Ajustes() {
       descargarRespaldoJSON(previo, 'respaldo-candelaria-antes-de-migrar-fotos');
       const resultado = await migrarFotosCatalogo(db, setProgresoFotos);
       invalidarCatalogo();
+      await sincronizarCatalogoPublico(db);
       const revisionActualizada = await revisarMigracionFotos(db);
       setRevisionFotos(revisionActualizada);
       setMensaje(`Migración terminada: ${resultado.fotosMigradas} fotos de ${resultado.registrosMigrados} registros. Se descargó un respaldo previo.`);
@@ -88,6 +91,7 @@ export function Ajustes() {
       descargarRespaldoJSON(previo, 'respaldo-candelaria-antes-de-importar');
       await importarRespaldo(db, respaldo);
       invalidarCatalogo();
+      await sincronizarCatalogoPublico(db);
       setMensaje('Respaldo importado correctamente. También se descargó una copia del estado anterior.');
     } catch (e) { setMensaje(`No se pudo importar: ${e.message}`); } finally { evento.currentTarget.value = ''; }
   }
@@ -127,7 +131,7 @@ export function Ajustes() {
       if (tipo === 'insumos') for (const fila of filas) await guardar(db, TIENDAS.INSUMOS, { id: fila.codigo, codigo: fila.codigo, nombre: fila.nombre, categoria: fila.categoria, unidad: fila.unidad, montoCompra: Number(fila.montoCompra), cantidadCompra: Number(fila.cantidadCompra), activo: true });
       if (tipo === 'productos') for (const fila of filas) await guardar(db, TIENDAS.PRODUCTOS, { id: fila.codigo, codigo: fila.codigo, nombre: fila.nombre, categoria: fila.categoria, ceraAltoPF: Number(fila.ceraAltoPF), ceraBajoPF: Number(fila.ceraBajoPF), pabilo: Number(fila.pabilo), yeso: Number(fila.yeso), minutosManoObra: Number(fila.minutosManoObra), recipienteCosto: Number(fila.recipienteCosto), recipienteCantidad: Number(fila.recipienteCantidad), heredaCostoDe: null, extras: [], activo: true });
       if (tipo === 'combos') for (const fila of filas) await guardar(db, TIENDAS.COMBOS, { id: fila.id, nombre: fila.nombre, lineas: JSON.parse(fila.lineas), activo: true });
-      invalidarCatalogo(); setMensaje(`Se importaron ${filas.length} registros de ${tipo}.`);
+      invalidarCatalogo(); await sincronizarCatalogoPublico(db); setMensaje(`Se importaron ${filas.length} registros de ${tipo}.`);
       await actualizarConteos();
     } catch (e) { setMensaje(`No se pudo importar ${tipo}: ${e.message}`); } finally { evento.currentTarget.value = ''; }
   }

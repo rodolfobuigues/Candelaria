@@ -93,6 +93,56 @@ h1, h2, h3 {
   margin-top: 0;
 }
 
+.catalogo-publico {
+  display: grid;
+  gap: var(--esp-seccion);
+  width: min(100%, 860px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: var(--esp-seccion) var(--esp-elemento);
+}
+
+.catalogo-publico__encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+}
+
+.catalogo-publico__encabezado h1,
+.catalogo-publico__presentacion h2,
+.catalogo-publico__presentacion p,
+.catalogo-publico__datos h2,
+.catalogo-publico__datos p {
+  margin: 0;
+}
+
+.catalogo-publico__ingresar {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.catalogo-publico__presentacion,
+.catalogo-publico__datos {
+  display: grid;
+  gap: var(--esp-stack-s);
+}
+
+.catalogo-publico__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: var(--esp-elemento);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalogo-publico__combo {
+  display: grid;
+  align-content: start;
+  gap: var(--esp-elemento);
+}
+
 /* === Pantalla Productos === */
 
 .productos-pantalla {

@@ -8,6 +8,7 @@ import { navegarA } from '../../enrutador.js';
 import { GaleriaFotos } from '../../comun/GaleriaFotos.jsx';
 import { guardarFotosEnStorage } from '../../../persistencia/fotosStorage.js';
 import { supabaseConfigurado } from '../../../config/supabase.js';
+import { sincronizarCatalogoPublico } from '../../../persistencia/catalogoPublicoRepo.js';
 
 const CATEGORIAS = [['VELA', 'Vela'], ['RECIPIENTE', 'Recipiente'], ['REPOSICION', 'Reposición']];
 const NUMERICOS = ['ceraAltoPF', 'ceraBajoPF', 'pabilo', 'yeso', 'minutosManoObra', 'recipienteCosto', 'recipienteCantidad'];
@@ -42,7 +43,7 @@ export function ProductoForm({ id = null }) {
       const registro = { ...form, id: editando ? id : form.codigo.trim(), codigo: form.codigo.trim(), nombre: form.nombre.trim() };
       const conFotos = supabaseConfigurado ? await guardarFotosEnStorage(registro, 'productos') : registro;
       await guardar(db, TIENDAS.PRODUCTOS, conFotos);
-      invalidarCatalogo(); navegarA(`producto/${editando ? id : form.codigo.trim()}`);
+      invalidarCatalogo(); await sincronizarCatalogoPublico(db); navegarA(`producto/${editando ? id : form.codigo.trim()}`);
     } catch (e) { setError(e.message); } finally { setGuardando(false); }
   }
 

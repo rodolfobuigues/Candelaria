@@ -3,7 +3,7 @@
 // History API: GitHub Pages no tiene fallback de SPA."
 import { useState, useEffect } from 'preact/hooks';
 
-const RUTA_INICIAL = 'vender';
+const RUTA_INICIAL = 'catalogo';
 
 function leerRutaDelHash() {
   const hash = globalThis.location.hash.replace(/^#\/?/, '');

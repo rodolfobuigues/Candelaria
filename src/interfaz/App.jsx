@@ -27,7 +27,8 @@ const TITULOS = {
 
 export function App() {
   const ruta = useRuta();
-  const [rutaBase, consulta] = ruta.split('?');
+  const rutaPrivada = ruta === 'catalogo' ? 'vender' : ruta;
+  const [rutaBase, consulta] = rutaPrivada.split('?');
   const parametrosRuta = new URLSearchParams(consulta ?? '');
   const origen = parametrosRuta.get('origen');
   const filtroOrigen = parametrosRuta.get('filtro');

@@ -57,6 +57,10 @@ pedidos; incorpora autenticación, respaldo seguro y fotos en Storage.*
   Antes de importar se valida y descarga una copia del estado vigente. La
   restauración guarda primero, elimina sobrantes después y revierte
   automáticamente si una operación falla.
+- El catálogo público se abre en `#/catalogo` y consulta solamente
+  `catalogo_publico_combos`. Esa tabla contiene nombre, descripción comercial,
+  precio y fotos. Las tablas de productos, insumos, parámetros, combos y
+  pedidos no tienen lectura anónima.
 
 **Advertencia de origen.** IndexedDB se aísla por **origen** (esquema + host +
 puerto), no por ruta. Se puede mover el repositorio o la carpeta sin perder

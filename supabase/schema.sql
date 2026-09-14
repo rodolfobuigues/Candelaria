@@ -41,6 +41,18 @@ create table if not exists public.combos (
   updated_at timestamptz not null default now()
 );
 
+-- Proyección pública: contiene únicamente datos comerciales de combos. La
+-- aplicación autenticada la recalcula con el mismo motor de precios del panel.
+create table if not exists public.catalogo_publico_combos (
+  id text primary key,
+  nombre text not null,
+  descripcion text not null default '',
+  precio numeric not null default 0,
+  fotos jsonb not null default '[]'::jsonb,
+  activo boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.parametros (
   id text primary key,
   datos jsonb not null default '{}'::jsonb,
@@ -64,13 +76,12 @@ create table if not exists public.pedidos (
 alter table public.insumos enable row level security;
 alter table public.productos enable row level security;
 alter table public.combos enable row level security;
+alter table public.catalogo_publico_combos enable row level security;
 alter table public.parametros enable row level security;
 alter table public.pedidos enable row level security;
 
--- Catálogo público: solo registros activos.
-create policy "catalogo publico lee productos activos" on public.productos
-  for select to anon, authenticated using (activo = true);
-create policy "catalogo publico lee combos activos" on public.combos
+-- Catálogo público: sólo la proyección comercial, nunca recetas ni costos.
+create policy "publico lee combos publicados" on public.catalogo_publico_combos
   for select to anon, authenticated using (activo = true);
 
 -- Panel privado: cualquier usuario autenticado (se creará uno solo al inicio).
@@ -79,6 +90,8 @@ create policy "creador administra insumos" on public.insumos
 create policy "creador administra productos" on public.productos
   for all to authenticated using (true) with check (true);
 create policy "creador administra combos" on public.combos
+  for all to authenticated using (true) with check (true);
+create policy "creador administra catalogo publico" on public.catalogo_publico_combos
   for all to authenticated using (true) with check (true);
 create policy "creador administra parametros" on public.parametros
   for all to authenticated using (true) with check (true);
@@ -101,3 +114,6 @@ create policy "creador actualiza fotos" on storage.objects
 create policy "creador elimina fotos" on storage.objects
   for delete to authenticated
   using (bucket_id = 'catalogo');
+
+grant select on public.catalogo_publico_combos to anon, authenticated;
+grant insert, update, delete on public.catalogo_publico_combos to authenticated;

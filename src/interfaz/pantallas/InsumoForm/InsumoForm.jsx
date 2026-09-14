@@ -4,6 +4,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { abrirDB, guardar, obtenerPorId } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
+import { sincronizarCatalogoPublico } from '../../../persistencia/catalogoPublicoRepo.js';
 import { navegarA } from '../../enrutador.js';
 
 const UNIDADES = ['g', 'kg', 'ml', 'unidad', 'hora'];
@@ -36,7 +37,7 @@ export function InsumoForm({ id = null }) {
     try {
       const db = await abrirDB();
       await guardar(db, TIENDAS.INSUMOS, { id: editando ? id : form.codigo.trim(), codigo: form.codigo.trim(), nombre: form.nombre.trim(), categoria: form.categoria.trim(), unidad: form.unidad, montoCompra, cantidadCompra, activo: true });
-      invalidarCatalogo(); navegarA('productos');
+      invalidarCatalogo(); await sincronizarCatalogoPublico(db); navegarA('productos');
     } catch (e) { setError(e.message); } finally { setGuardando(false); }
   }
 
