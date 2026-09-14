@@ -6,8 +6,8 @@ Documento de entrada para construir la aplicación. Reemplaza la planilla
 **Idioma de toda la interfaz: español rioplatense. Moneda: pesos argentinos.
 Formato numérico: separador de miles `.`, decimal `,`.**
 
-*Actualizado: 20/07/2026 — incorpora las decisiones técnicas cerradas durante la
-construcción (interfaz, host, librería de Excel, guardián de literales).*
+*Actualizado: 14/09/2026 — Supabase es la fuente vigente del catálogo y los
+pedidos; incorpora autenticación, respaldo seguro y fotos en Storage.*
 
 ---
 
@@ -18,17 +18,23 @@ construcción (interfaz, host, librería de Excel, guardián de literales).*
 | Catálogo de insumos con costo derivado de la compra | Control de stock |
 | Catálogo de productos con receta (BOM) | Órdenes de producción |
 | Combos | Contabilidad, facturación, AFIP |
-| Motor de costeo y precios | Múltiples usuarios o sincronización en la nube |
+| Motor de costeo y precios | Múltiples usuarios creadores |
 | Toma de pedidos, pagos parciales e historial | Pasarela de pagos |
+| Panel privado para un usuario creador | Contabilidad multiusuario |
+| Catálogo público de combos | Exposición pública de costos o pedidos |
 | Importación única de la planilla actual | |
 | Exportación e importación de respaldo JSON | |
 | Exportación e importación de la base en Excel | |
-| Borrado completo de la base desde Ajustes | Baja individual de pedidos |
+| Fotos del catálogo en Supabase Storage | Borrado masivo sin respaldo |
 
 ## 2. Stack
 
-- **PWA instalable**, offline-first. Sin backend, sin servicios pagos.
-- Persistencia local en **IndexedDB**.
+- **PWA instalable** publicada en GitHub Pages.
+- Persistencia vigente en **Supabase**. IndexedDB se conserva como alternativa
+  de desarrollo cuando Supabase no está configurado.
+- **Un usuario creador** autenticado administra costos, catálogo, pedidos y
+  ajustes. Los visitantes sólo pueden consultar el catálogo público permitido
+  por RLS.
 - **Interfaz: Preact con JSX sobre Vite. JavaScript, sin TypeScript.** API
   idéntica a React con 3 KB de runtime; reversible a React con un alias en
   `vite.config.js`. Los hooks se importan de `preact/hooks`. En campos de
@@ -42,9 +48,15 @@ construcción (interfaz, host, librería de Excel, guardián de literales).*
 - **Dispositivo objetivo: Android / Chrome.** Ancho de referencia, 360 px.
 - **Host: GitHub Pages**, repositorio `candelaria`, URL
   `https://<usuario>.github.io/candelaria/`, `base: '/candelaria/'` en Vite.
-- Diseñada para uso en celular, en vertical, con una mano. Debe funcionar sin
-  conexión de datos, porque se usa frente al cliente.
+- Diseñada para uso en celular, en vertical, con una mano. Las funciones que
+  escriben en Supabase requieren conexión.
+- Las fotos se guardan en el bucket público `catalogo`; las filas de productos
+  y combos almacenan sus URLs. Las fotos históricas Base64 se migran desde
+  Ajustes mediante un proceso revisable, confirmado y reanudable.
 - Respaldo: exportación e importación de un único archivo JSON con toda la base.
+  Antes de importar se valida y descarga una copia del estado vigente. La
+  restauración guarda primero, elimina sobrantes después y revierte
+  automáticamente si una operación falla.
 
 **Advertencia de origen.** IndexedDB se aísla por **origen** (esquema + host +
 puerto), no por ruta. Se puede mover el repositorio o la carpeta sin perder

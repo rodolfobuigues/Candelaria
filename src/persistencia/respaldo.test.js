@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { test, describe, before, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { abrirDB, obtenerTodos, obtenerPorId, guardar, eliminarTodo } from './db.js';
-import { exportarRespaldo, importarRespaldo } from './respaldo.js';
+import { exportarRespaldo, importarRespaldo, validarRespaldo } from './respaldo.js';
 import { listarPedidos } from './pedidosRepo.js';
 import { TIENDAS } from './esquema.js';
 
@@ -49,8 +49,14 @@ describe('respaldo.js — exportación e importación', () => {
     assert.equal('total' in pedidoCrudo, false);
     assert.equal('estadoCobro' in pedidoCrudo, false);
 
-    // Vaciamos la base para probar que la importación la reconstruye entera.
-    await Promise.all(Object.values(TIENDAS).map((tienda) => guardar(db, tienda, { id: '__marcador__' })));
+    // Agregamos registros ajenos para probar que la importación los quita solo
+    // después de guardar el respaldo completo. El pedido debe ser válido porque
+    // la restauración segura respalda el estado actual antes de modificarlo.
+    await guardar(db, TIENDAS.INSUMOS, { id: '__marcador__', codigo: 'MX', nombre: 'Marcador' });
+    await guardar(db, TIENDAS.PRODUCTOS, { id: '__marcador__', codigo: 'VX', nombre: 'Marcador' });
+    await guardar(db, TIENDAS.COMBOS, { id: '__marcador__', nombre: 'Marcador' });
+    await guardar(db, TIENDAS.PARAMETROS, { id: '__marcador__' });
+    await guardar(db, TIENDAS.PEDIDOS, { id: '__marcador__', numero: 999, fecha: '2026-07-20T10:00:00.000Z', clienteNombre: 'Marcador', lineas: [], pagos: [], historial: [] });
     await importarRespaldo(db, respaldo);
 
     const [insumos, productos, combos, parametros, pedidos] = await Promise.all([
@@ -79,5 +85,30 @@ describe('respaldo.js — exportación e importación', () => {
     const respaldo = await exportarRespaldo(db);
     assert.equal(respaldo.version, 1);
     assert.ok(respaldo.exportadoEn);
+  });
+
+  test('rechaza un respaldo incompleto antes de modificar la base', async () => {
+    await guardar(db, TIENDAS.INSUMOS, { id: 'i1', codigo: 'M1', nombre: 'Original' });
+
+    assert.throws(
+      () => validarRespaldo({ version: 1, insumos: [] }),
+      /no contiene la colección productos/
+    );
+    await assert.rejects(() => importarRespaldo(db, { version: 1, insumos: [] }), /no contiene la colección productos/);
+    assert.equal((await obtenerPorId(db, TIENDAS.INSUMOS, 'i1')).nombre, 'Original');
+  });
+
+  test('si un guardado falla restaura el estado anterior y elimina altas parciales', async () => {
+    await guardar(db, TIENDAS.PRODUCTOS, { id: 'original', codigo: 'V1', nombre: 'Original' });
+    const respaldo = await exportarRespaldo(db);
+    respaldo.productos = [
+      { id: 'nuevo', codigo: 'V2', nombre: 'Nuevo' },
+      { id: 'conflicto', codigo: 'V1', nombre: 'Código repetido' },
+    ];
+
+    await assert.rejects(() => importarRespaldo(db, respaldo), /se restauró el estado anterior/);
+
+    const productos = await obtenerTodos(db, TIENDAS.PRODUCTOS);
+    assert.deepEqual(productos, [{ id: 'original', codigo: 'V1', nombre: 'Original' }]);
   });
 });

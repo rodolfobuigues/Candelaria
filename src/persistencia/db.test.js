@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { test, describe, before, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { abrirDB, obtenerTodos, obtenerPorId, guardar, eliminarTodo } from './db.js';
+import { abrirDB, obtenerTodos, obtenerPorId, guardar, eliminarPorId, eliminarTodo } from './db.js';
 import { TIENDAS } from './esquema.js';
 
 // Una sola conexión compartida: indexedDB.deleteDatabase() se queda colgado
@@ -45,5 +45,15 @@ describe('db.js — adaptador de IndexedDB', () => {
     await eliminarTodo(db, TIENDAS.COMBOS);
 
     assert.deepEqual(await obtenerTodos(db, TIENDAS.COMBOS), []);
+  });
+
+  test('eliminarPorId quita solo el registro indicado', async () => {
+    await guardar(db, TIENDAS.COMBOS, { id: 'c1', nombre: 'Combo A' });
+    await guardar(db, TIENDAS.COMBOS, { id: 'c2', nombre: 'Combo B' });
+
+    await eliminarPorId(db, TIENDAS.COMBOS, 'c1');
+
+    assert.equal(await obtenerPorId(db, TIENDAS.COMBOS, 'c1'), null);
+    assert.equal((await obtenerTodos(db, TIENDAS.COMBOS)).length, 1);
   });
 });

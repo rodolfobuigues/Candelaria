@@ -5,9 +5,10 @@ import { abrirDB, obtenerTodos, guardar } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { guardarParametros, obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
-import { exportarRespaldo, importarRespaldo } from '../../../persistencia/respaldo.js';
+import { exportarRespaldo, importarRespaldo, validarRespaldo } from '../../../persistencia/respaldo.js';
 import { leerXlsx } from '../../../persistencia/xlsxLectura.js';
 import { supabase, supabaseConfigurado } from '../../../config/supabase.js';
+import { migrarFotosCatalogo, revisarMigracionFotos } from '../../../persistencia/fotosStorage.js';
 import { navegarA } from '../../enrutador.js';
 
 const CAMPOS = [
@@ -15,11 +16,23 @@ const CAMPOS = [
   ['costoHoraManoObra', 'Mano de obra por hora', 1], ['porcentajeEsencia', 'Esencia (%)', 0.1], ['mlColorantePorGramoCera', 'Colorante (ml por g)', 0.00001], ['unidadesCocoPorGramoCera', 'Aceite de coco (unidad por g)', 0.00001],
 ];
 
+function descargarRespaldoJSON(respaldo, prefijo = 'respaldo-candelaria') {
+  const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' });
+  const enlace = document.createElement('a');
+  enlace.href = URL.createObjectURL(blob);
+  enlace.download = `${prefijo}-${new Date().toISOString().replaceAll(':', '-').slice(0, 19)}.json`;
+  enlace.click();
+  URL.revokeObjectURL(enlace.href);
+}
+
 export function Ajustes() {
   const [parametros, setParametros] = useState(null);
   const [mensaje, setMensaje] = useState(null);
   const [revision, setRevision] = useState(null);
   const [conteos, setConteos] = useState(null);
+  const [revisionFotos, setRevisionFotos] = useState(null);
+  const [migrandoFotos, setMigrandoFotos] = useState(false);
+  const [progresoFotos, setProgresoFotos] = useState(null);
   useEffect(() => { abrirDB().then(obtenerParametrosVigentes).then(setParametros); }, []);
   async function actualizarConteos() {
     const db = await abrirDB();
@@ -38,11 +51,45 @@ export function Ajustes() {
     if (error) setMensaje(`No se pudo cerrar la sesión: ${error.message}`);
   }
   async function exportar() {
-    const db = await abrirDB(); const respaldo = await exportarRespaldo(db); const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' }); const enlace = document.createElement('a'); enlace.href = URL.createObjectURL(blob); enlace.download = `respaldo-candelaria-${new Date().toISOString().slice(0, 10)}.json`; enlace.click(); URL.revokeObjectURL(enlace.href);
+    const db = await abrirDB(); const respaldo = await exportarRespaldo(db); descargarRespaldoJSON(respaldo);
+  }
+  async function revisarFotos() {
+    try {
+      const db = await abrirDB();
+      const resultado = await revisarMigracionFotos(db);
+      setRevisionFotos(resultado);
+      setMensaje(resultado.fotosBase64 > 0 ? 'Revisión terminada. No se modificó ninguna foto.' : 'Todas las fotos del catálogo ya están guardadas como URL.');
+    } catch (e) { setMensaje(`No se pudieron revisar las fotos: ${e.message}`); }
+  }
+  async function migrarFotos() {
+    if (!revisionFotos?.fotosBase64 || migrandoFotos) return;
+    if (!confirm(`Se migrarán ${revisionFotos.fotosBase64} fotos de ${revisionFotos.registrosPendientes} registros a Supabase Storage. Antes se descargará un respaldo JSON. ¿Continuar?`)) return;
+    setMigrandoFotos(true); setProgresoFotos({ migrados: 0, total: revisionFotos.registrosPendientes, fotosMigradas: 0 });
+    try {
+      const db = await abrirDB();
+      const previo = await exportarRespaldo(db);
+      descargarRespaldoJSON(previo, 'respaldo-candelaria-antes-de-migrar-fotos');
+      const resultado = await migrarFotosCatalogo(db, setProgresoFotos);
+      invalidarCatalogo();
+      const revisionActualizada = await revisarMigracionFotos(db);
+      setRevisionFotos(revisionActualizada);
+      setMensaje(`Migración terminada: ${resultado.fotosMigradas} fotos de ${resultado.registrosMigrados} registros. Se descargó un respaldo previo.`);
+    } catch (e) {
+      setMensaje(`La migración se detuvo: ${e.message} Los registros ya migrados conservan sus URLs y se puede reanudar volviendo a revisar.`);
+    } finally { setMigrandoFotos(false); }
   }
   async function importar(evento) {
     const archivo = evento.currentTarget.files?.[0]; if (!archivo) return;
-    try { const respaldo = JSON.parse(await archivo.text()); if (!confirm('Esto reemplazará todos los datos actuales. ¿Continuar?')) return; const db = await abrirDB(); await importarRespaldo(db, respaldo); invalidarCatalogo(); setMensaje('Respaldo importado correctamente.'); } catch (e) { setMensaje(`No se pudo importar: ${e.message}`); } finally { evento.currentTarget.value = ''; }
+    try {
+      const respaldo = validarRespaldo(JSON.parse(await archivo.text()));
+      if (!confirm('Se validó el respaldo. Se descargará una copia de seguridad actual y luego se reemplazarán los datos. ¿Continuar?')) return;
+      const db = await abrirDB();
+      const previo = await exportarRespaldo(db);
+      descargarRespaldoJSON(previo, 'respaldo-candelaria-antes-de-importar');
+      await importarRespaldo(db, respaldo);
+      invalidarCatalogo();
+      setMensaje('Respaldo importado correctamente. También se descargó una copia del estado anterior.');
+    } catch (e) { setMensaje(`No se pudo importar: ${e.message}`); } finally { evento.currentTarget.value = ''; }
   }
   function descargarCSV(nombre, filas) {
     const escapar = (valor) => `"${String(valor ?? '').replaceAll('"', '""')}"`;
@@ -100,6 +147,6 @@ export function Ajustes() {
     <section class="ajustes-seccion"><h2 class="texto-seccion">Mensajes</h2>{['confirmacion', 'pago', 'pago_anulado', 'recordatorio', 'entrega', 'entrega_corregida'].map((id) => <button type="button" class="fila-ajuste" key={id} onClick={() => navegarA(`plantilla/${id}`)}><span>{id.replaceAll('_', ' ').replace(/^./, (letra) => letra.toUpperCase())}</span><span>›</span></button>)}</section>
     {mensaje && <p class="aviso aviso--info">{mensaje}</p>}
     {revision && <section class="tarjeta importacion-revision"><h2 class="texto-seccion">Revisar importación</h2><span class="texto-cuerpo-s">{revision.nombre}</span><ul class="importacion-hojas">{revision.hojas.map((hoja) => <li key={hoja.nombre}><span>{hoja.nombre}</span><strong>{hoja.filas} filas</strong></li>)}</ul>{revision.pendientes.length > 0 ? <><h3 class="texto-seccion">Casos para consultar</h3><ul class="importacion-pendientes">{revision.pendientes.map((pendiente) => <li key={pendiente}>{pendiente}</li>)}</ul></> : <p class="texto-cuerpo-s">No se detectaron casos estructurales pendientes. La aplicación todavía no aplicó la planilla.</p>}</section>}
-    <section class="ajustes-seccion"><h2 class="texto-seccion">Datos</h2>{conteos && <div class="tarjeta"><h3 class="texto-seccion">Catálogo actual</h3><p class="texto-cuerpo-s">Insumos: {conteos.insumos} · Productos: {conteos.productos} · Combos: {conteos.combos}</p><button type="button" class="boton-secundario" onClick={() => actualizarConteos().catch((e) => setMensaje(`No se pudo consultar el catálogo: ${e.message}`))}>Actualizar conteos</button></div>}<button type="button" class="fila-ajuste" onClick={exportar}><span>Respaldo</span><span>Descargar JSON</span></button><label class="fila-ajuste"><span>Importar respaldo JSON</span><input type="file" accept="application/json,.json" onChange={importar} /></label><button type="button" class="fila-ajuste" onClick={exportarCSV}><span>Exportar para Excel</span><span>CSV</span></button><label class="fila-ajuste"><span>Revisar planilla Excel</span><input type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" onChange={revisarExcel} /></label><label class="fila-ajuste"><span>Importar insumos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'insumos')} /></label><label class="fila-ajuste"><span>Importar productos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'productos')} /></label><label class="fila-ajuste"><span>Importar combos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'combos')} /></label>{supabaseConfigurado && <button type="button" class="boton-secundario" onClick={cerrarSesion}>Cerrar sesión</button>}</section>
+    <section class="ajustes-seccion"><h2 class="texto-seccion">Datos</h2>{conteos && <div class="tarjeta"><h3 class="texto-seccion">Catálogo actual</h3><p class="texto-cuerpo-s">Insumos: {conteos.insumos} · Productos: {conteos.productos} · Combos: {conteos.combos}</p><button type="button" class="boton-secundario" onClick={() => actualizarConteos().catch((e) => setMensaje(`No se pudo consultar el catálogo: ${e.message}`))}>Actualizar conteos</button></div>}<button type="button" class="fila-ajuste" onClick={exportar}><span>Respaldo</span><span>Descargar JSON</span></button><label class="fila-ajuste"><span>Importar respaldo JSON</span><input type="file" accept="application/json,.json" onChange={importar} /></label><button type="button" class="fila-ajuste" onClick={exportarCSV}><span>Exportar para Excel</span><span>CSV</span></button><label class="fila-ajuste"><span>Revisar planilla Excel</span><input type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" onChange={revisarExcel} /></label><label class="fila-ajuste"><span>Importar insumos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'insumos')} /></label><label class="fila-ajuste"><span>Importar productos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'productos')} /></label><label class="fila-ajuste"><span>Importar combos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'combos')} /></label>{supabaseConfigurado && <><button type="button" class="fila-ajuste" disabled={migrandoFotos} onClick={revisarFotos}><span>Fotos del catálogo</span><span>Revisar migración</span></button>{revisionFotos && <div class="tarjeta importacion-revision"><h3 class="texto-seccion">Estado de las fotos</h3><p class="texto-cuerpo-s">Fotos pendientes en Base64: {revisionFotos.fotosBase64} · Fotos con URL: {revisionFotos.fotosConUrl} · Productos o combos pendientes: {revisionFotos.registrosPendientes}</p>{progresoFotos && migrandoFotos && <p class="texto-cuerpo-s">Migrando registro {progresoFotos.migrados} de {progresoFotos.total} · {progresoFotos.fotosMigradas} fotos completadas</p>}{revisionFotos.fotosBase64 > 0 && <button type="button" class="boton-secundario" disabled={migrandoFotos} onClick={migrarFotos}>{migrandoFotos ? 'Migrando fotos…' : 'Migrar fotos a Storage'}</button>}</div>}<button type="button" class="boton-secundario" onClick={cerrarSesion}>Cerrar sesión</button></>}</section>
   </section>;
 }

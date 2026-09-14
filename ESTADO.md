@@ -12,11 +12,12 @@ al abrir un chat nuevo.
 | | |
 |---|---|
 | Carpeta | `D:\Colo\Candelaria` |
-| Repositorio | git iniciado. Último commit registrado: `f28bbc0` (armazón de interfaz), más el commit del reporter `dot` |
-| Tests | **204 en verde**, 25 suites, 0 fallos |
-| Fase actual | **Fase 4 cerrada.** Las 12 pantallas de interfaz están construidas en código |
-| Próximo paso | Fase 5: **Importador y exportación Excel** |
-| Sin commitear | Cambios locales pendientes de revisión/commit |
+| Repositorio | `https://github.com/rodolfobuigues/Candelaria.git`, rama `main` |
+| Publicación | `https://rodolfobuigues.github.io/Candelaria/`, despliegue automático por GitHub Actions |
+| Tests | `npm test` en verde el 14/09/2026 |
+| Compilación | `npm run build` correcta el 14/09/2026 |
+| Estado actual | Catálogo, costos, pedidos, mensajes, fotos y ajustes conectados a Supabase |
+| Próximo paso | Separar el catálogo público de combos del panel privado y completar la instalación PWA en Android |
 
 ### Fuente de datos vigente
 
@@ -42,9 +43,10 @@ usarse para sobrescribir el catálogo remoto.
 | 3a — Persistencia | ✅ | IndexedDB, respaldo JSON, pagos e historial |
 | 3b — Tokens de estilo | ✅ | Tokens, componentes, fuentes locales y guardián con 4 tests de control |
 | 4 — Interfaz | ✅ | **Cimientos ✅. 12 de 12 pantallas** |
-| 5 — Importador y Excel | 🔄 | Respaldo JSON, CSV y lector inicial de planilla XLSX; falta previsualización y aplicación validada |
-| 6 — PWA publicada | ⬜ | GitHub Pages |
-| 7 — Datos reales | ⬜ | |
+| 5 — Importador y Excel | 🔄 | Respaldo JSON seguro, CSV y lector inicial de planilla XLSX; falta completar la previsualización y aplicación validada de XLSX |
+| 6 — PWA publicada | 🔄 | GitHub Pages activo; faltan iconos del manifest y validación final desde Android |
+| 7 — Supabase | ✅ | Autenticación, tablas, RLS y catálogo remoto vigentes |
+| 8 — Endurecimiento | 🔄 | Correcciones de pedidos, navegación, mensajes, restauración protegida y transición de fotos a Storage |
 
 ---
 
@@ -139,9 +141,10 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
    framework; reversible a React con un alias en `vite.config.js`. Hooks desde
    `preact/hooks`; en formularios el evento en vivo es `onInput`, no `onChange`.
    Enrutado por hash, escrito a mano, sin librería. Sin librería de estado.
-7. **Dispositivo objetivo: Android / Chrome.** Se descarta el riesgo de purga de
-   almacenamiento de Safari iOS. Queda el desalojo por presión de espacio,
-   mitigado con `navigator.storage.persist()` al instalar.
+7. **Dispositivo objetivo: Android / Chrome.** Supabase es la fuente vigente;
+   IndexedDB queda como alternativa cuando el entorno no tiene Supabase
+   configurado. Falta solicitar persistencia local con
+   `navigator.storage.persist()` y verificar la instalación real en Android.
 8. **Host: GitHub Pages**, repo `candelaria`, URL
    `https://<usuario>.github.io/candelaria/`, `base: '/candelaria/'` en Vite,
    publicación por GitHub Actions al hacer push a `main`. El repo es público:
@@ -177,6 +180,14 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
     es `tokens-guard.cjs`, que sí escanea `.jsx`.
 16. **Reporter `dot`** en `npm test` y en el hook, para no volcar 179 líneas al
     contexto en cada corrida. El detalle sale con `npm run test:detalle`.
+17. **Supabase es la única fuente vigente del catálogo.** Las cantidades de las
+    fixtures del Excel son históricas y no se usan para resembrar ni limitar los
+    registros remotos. Las fotos nuevas se guardan en Storage y las antiguas en
+    Base64 se migran desde Ajustes con revisión y confirmación explícitas.
+18. **La restauración JSON no vacía las tablas por adelantado.** Valida el
+    archivo, descarga una copia previa, guarda primero el contenido de destino,
+    elimina después únicamente los identificadores sobrantes y trata de
+    restaurar automáticamente el estado original ante una falla.
 
 ---
 
@@ -184,15 +195,12 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 
 | Pendiente | Cuándo |
 |---|---|
-| **Toda ruta que cree, edite o desactive un insumo debe llamar a `invalidarCatalogo()`.** El catálogo memoizado no lo detecta solo | Fase 4, pantalla 8 |
-| Verificar cada pantalla a 360 px en DevTools con `console.table`: ancho y alto ≥ 48 px, ningún rótulo cortado, ningún importe partido | Fase 4, cada pantalla |
-| La herencia de costo (`heredaCostoDe`) está escrita pero **no ejercitada con datos reales**. Los tres productos que la usan pasan por ahí recién en el importador | Fase 5 |
-| El exportador a Excel **debe leer con `listarPedidos`**, nunca crudo sobre la tienda de pedidos | Fase 5 |
-| ExcelJS necesita `Buffer` en el navegador: verificarlo con la app **compilada**, no solo en el servidor de desarrollo | Fase 5 |
-| Verificar que el `.xlsx` original y los respaldos JSON estén en `.gitignore` antes del primer push al repo público | Antes de Fase 6 |
-| `scope` y `start_url` del manifest deben incluir `/candelaria/`, y el service worker registrarse con ese scope. Si quedan en `/`, el modo avión falla en silencio | Fase 6 |
-| **Borrar toda la base antes de importar la planilla real.** Si quedaron datos de la siembra de desarrollo, se duplican o se pisan sin aviso | Fase 7, antes del paso 20 |
-| Revisar el costo de **Bolsa gruesa** (304,17 vs 1.500 forzado) y **Caja exagonal** (sin costo unitario, 2.000 forzado) | Fase 7, tras importar |
+| Separar el catálogo público de combos del panel autenticado, sin exponer costos, pedidos ni ajustes | Próxima prioridad funcional |
+| Ejecutar desde Ajustes la revisión de fotos Base64 y, si el resultado es correcto, iniciar la migración resumible a Storage | Operación manual del creador |
+| Agregar iconos al manifest, aviso de actualización y `navigator.storage.persist()` | PWA |
+| Verificar instalación, navegación, fotos y actualización desde Android sobre GitHub Pages | Validación final PWA |
+| Completar la previsualización y aplicación validada del importador XLSX sin sobrescribir silenciosamente datos remotos | Importación |
+| No corregir materiales sin costo o fórmulas dudosas sin consulta previa | Regla permanente |
 
 ---
 

@@ -78,3 +78,12 @@ export function eliminarTodo(db, tienda) {
     solicitud.onerror = () => reject(solicitud.error);
   });
 }
+
+export function eliminarPorId(db, tienda, id) {
+  if (remoto(db)) return supabase.from(TABLAS[tienda]).delete().eq('id', id).then(({ error }) => { if (error) throw error; });
+  return new Promise((resolve, reject) => {
+    const solicitud = db.transaction(tienda, 'readwrite').objectStore(tienda).delete(id);
+    solicitud.onsuccess = () => resolve();
+    solicitud.onerror = () => reject(solicitud.error);
+  });
+}
