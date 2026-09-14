@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo descripcion">
+  <title id="titulo">Candelaria</title>
+  <desc id="descripcion">Una llama color terracota sobre fondo crema</desc>
+  <rect width="512" height="512" fill="#f8f6f1"/>
+  <path d="M256 112c15 58-47 85-47 154 0 31 20 56 47 56s47-25 47-56c0-30-15-55-35-78 5 39-11 57-29 60 11-42-1-74 17-136Z" fill="#a4472a"/>
+  <path d="M174 330h164v34c0 28-23 51-51 51h-62c-28 0-51-23-51-51v-34Z" fill="#6d4c41"/>
+  <path d="M158 317c0-11 9-19 19-19h158c10 0 19 8 19 19s-9 19-19 19H177c-10 0-19-8-19-19Z" fill="#d4a446"/>
+</svg>

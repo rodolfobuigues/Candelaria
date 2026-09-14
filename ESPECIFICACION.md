@@ -775,6 +775,9 @@ Los tres usan `;` como separador y `.` como decimal.
 25. Al haber una versión nueva, la app avisa y permite actualizar; no se queda
     con la versión vieja cacheada.
 26. Al instalar se solicita `navigator.storage.persist()`.
+27. El manifest incluye un icono general y otro `maskable`; el service worker
+    guarda solamente recursos del mismo origen y no almacena respuestas de la
+    API privada de Supabase.
 
 Caso de referencia para depurar — **V1 Pino chico**:
 

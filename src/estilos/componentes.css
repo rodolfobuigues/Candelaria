@@ -143,6 +143,27 @@ h1, h2, h3 {
   gap: var(--esp-elemento);
 }
 
+.pwa-actualizacion {
+  position: fixed;
+  right: var(--esp-pantalla);
+  bottom: var(--relleno-lista-inferior);
+  left: var(--esp-pantalla);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-elemento);
+  padding: var(--esp-elemento);
+  border-radius: var(--radio-l);
+  background: var(--color-inverse-surface);
+  color: var(--color-inverse-on-surface);
+  box-shadow: var(--sombra-flotante);
+}
+
+.pwa-actualizacion .boton-barra {
+  flex: 0 0 auto;
+}
+
 /* === Pantalla Productos === */
 
 .productos-pantalla {
@@ -1048,6 +1069,15 @@ h1, h2, h3 {
 }
 
 @media (max-width: 480px) {
+  .pwa-actualizacion {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pwa-actualizacion .boton-barra {
+    width: 100%;
+  }
+
   .catalogo-publico__encabezado {
     align-items: stretch;
     flex-direction: column;

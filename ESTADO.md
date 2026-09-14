@@ -44,7 +44,7 @@ usarse para sobrescribir el catálogo remoto.
 | 3b — Tokens de estilo | ✅ | Tokens, componentes, fuentes locales y guardián con 4 tests de control |
 | 4 — Interfaz | ✅ | **Cimientos ✅. 12 de 12 pantallas** |
 | 5 — Importador y Excel | 🔄 | Respaldo JSON seguro, CSV y lector inicial de planilla XLSX; falta completar la previsualización y aplicación validada de XLSX |
-| 6 — PWA publicada | 🔄 | GitHub Pages activo; faltan iconos del manifest y validación final desde Android |
+| 6 — PWA publicada | 🔄 | GitHub Pages activo, iconos instalables, actualización controlada y persistencia local; falta validación final desde Android físico |
 | 7 — Supabase | ✅ | Autenticación, tablas, RLS y catálogo remoto vigentes |
 | 8 — Endurecimiento | 🔄 | Correcciones de pedidos, navegación, mensajes, restauración protegida y transición de fotos a Storage |
 | 9 — Catálogo público | ✅ | Proyección pública exclusiva de combos; recetas, costos, pedidos y ajustes requieren autenticación |
@@ -202,7 +202,6 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 | Pendiente | Cuándo |
 |---|---|
 | Ejecutar desde Ajustes la revisión de fotos Base64 y, si el resultado es correcto, iniciar la migración resumible a Storage | Operación manual del creador |
-| Agregar iconos al manifest, aviso de actualización y `navigator.storage.persist()` | PWA |
 | Verificar instalación, navegación, fotos y actualización desde Android sobre GitHub Pages | Validación final PWA |
 | Completar la previsualización y aplicación validada del importador XLSX sin sobrescribir silenciosamente datos remotos | Importación |
 | No corregir materiales sin costo o fórmulas dudosas sin consulta previa | Regla permanente |

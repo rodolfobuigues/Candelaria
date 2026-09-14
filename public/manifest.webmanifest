@@ -7,5 +7,18 @@
   "display": "standalone",
   "background_color": "#f8f6f1",
   "theme_color": "#6d4c41",
-  "icons": []
+  "icons": [
+    {
+      "src": "/Candelaria/icono-candelaria.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/Candelaria/icono-candelaria-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
 }

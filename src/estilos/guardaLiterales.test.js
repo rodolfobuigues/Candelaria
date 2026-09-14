@@ -112,6 +112,14 @@ const LISTA_BLANCA_ESPERADA = {
       ruta: 'src/estilos/guardaLiterales.fixtures.cjs',
       motivo: 'ejemplos de violación usados por los tests del guardián',
     },
+    {
+      ruta: 'public/icono-candelaria.svg',
+      motivo: 'recurso gráfico PWA que incorpora los colores de marca',
+    },
+    {
+      ruta: 'public/icono-candelaria-maskable.svg',
+      motivo: 'recurso gráfico maskable PWA que incorpora los colores de marca',
+    },
   ],
   EXENTOS_PARCIALES: [
     {

@@ -33,6 +33,14 @@ const LISTA_BLANCA = Object.freeze({
       ruta: 'src/estilos/guardaLiterales.fixtures.cjs',
       motivo: 'ejemplos de violación usados por los tests del guardián',
     }),
+    Object.freeze({
+      ruta: 'public/icono-candelaria.svg',
+      motivo: 'recurso gráfico PWA que incorpora los colores de marca',
+    }),
+    Object.freeze({
+      ruta: 'public/icono-candelaria-maskable.svg',
+      motivo: 'recurso gráfico maskable PWA que incorpora los colores de marca',
+    }),
   ]),
   // Solo esas claves quedan exentas; el resto del archivo sí se revisa.
   EXENTOS_PARCIALES: Object.freeze([
