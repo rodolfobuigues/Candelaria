@@ -33,12 +33,18 @@ export function ComboForm({ id = null }) {
     async function cargar() {
       try {
         const db = await abrirDB();
-        const [productos, insumos, combos, parametros] = await Promise.all([obtenerTodos(db, TIENDAS.PRODUCTOS), obtenerTodos(db, TIENDAS.INSUMOS), obtenerTodos(db, TIENDAS.COMBOS), obtenerParametrosVigentes(db)]);
+        const [productos, insumos, combos, parametros, comboSeleccionado] = await Promise.all([
+          obtenerTodos(db, TIENDAS.PRODUCTOS),
+          obtenerTodos(db, TIENDAS.INSUMOS),
+          obtenerTodos(db, TIENDAS.COMBOS),
+          obtenerParametrosVigentes(db),
+          id ? obtenerPorId(db, TIENDAS.COMBOS, id) : Promise.resolve(null),
+        ]);
         const catalogo = await obtenerCatalogo(db, parametros);
         if (!activo) return;
         setOpciones([...productos.map((item) => ({ ...item, tipo: 'PRODUCTO', etiqueta: `${item.nombre} (${item.codigo})` })), ...insumos.map((item) => ({ ...item, tipo: 'INSUMO', etiqueta: `${item.nombre} (${item.codigo})` }))]);
         if (id) {
-          const combo = combos.find((item) => String(item.id) === String(id));
+          const combo = comboSeleccionado;
           if (combo) {
             setForm({ id: combo.id, nombre: combo.nombre, lineas: combo.lineas, fotos: combo.fotos ?? [] });
             const derivado = catalogo.combos.find((item) => String(item.id) === String(id));
