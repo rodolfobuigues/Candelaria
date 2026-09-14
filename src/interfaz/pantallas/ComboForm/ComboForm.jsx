@@ -38,10 +38,10 @@ export function ComboForm({ id = null }) {
         if (!activo) return;
         setOpciones([...productos.map((item) => ({ ...item, tipo: 'PRODUCTO', etiqueta: `${item.nombre} (${item.codigo})` })), ...insumos.map((item) => ({ ...item, tipo: 'INSUMO', etiqueta: `${item.nombre} (${item.codigo})` }))]);
         if (id) {
-          const combo = combos.find((item) => item.id === id);
+          const combo = combos.find((item) => String(item.id) === String(id));
           if (combo) {
             setForm({ id: combo.id, nombre: combo.nombre, lineas: combo.lineas, fotos: combo.fotos ?? [] });
-            const derivado = catalogo.combos.find((item) => item.id === id);
+            const derivado = catalogo.combos.find((item) => String(item.id) === String(id));
             const productosPorId = new Map(catalogo.productos.map((item) => [item.id, item]));
             const insumosPorId = new Map(insumos.map((item) => [item.id, item]));
             const desglose = combo.lineas.reduce((total, linea) => {
