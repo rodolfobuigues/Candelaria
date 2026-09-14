@@ -5,6 +5,7 @@ import {
   registrarPago,
   anularPago,
   marcarEntregado,
+  corregirEntrega,
   calcularDerivados,
   registrarMensaje,
 } from './pedidoLogica.js';
@@ -148,7 +149,8 @@ describe('criterio 14 — anulación de pago', () => {
     pedido = registrarPago(pedido, { id: 'pago-1', fecha: '2026-07-20T10:05:00.000Z', monto: 15000, medio: 'EFECTIVO' });
     assert.equal(calcularDerivados(pedido).saldo, 24500);
 
-    const conAnulacion = anularPago(pedido, 'pago-1', '2026-07-20T12:00:00.000Z');
+    pedido = registrarMensaje(pedido, { id: 'mensaje-pago-pago-1', fecha: '2026-07-20T10:06:00.000Z', texto: 'Pago recibido', categoria: 'pago', relacionadoId: 'pago-1' });
+    const conAnulacion = anularPago(pedido, 'pago-1', '2026-07-20T12:00:00.000Z', 'Se cargó al pedido equivocado.', 'anulacion-1');
 
     const derivados = calcularDerivados(conAnulacion);
     assert.equal(derivados.saldo, 39500);
@@ -158,13 +160,19 @@ describe('criterio 14 — anulación de pago', () => {
     const pagoAnulado = conAnulacion.pagos.find((pago) => pago.id === 'pago-1');
     assert.equal(pagoAnulado.anulado, true);
     assert.equal(pagoAnulado.fechaAnulacion, '2026-07-20T12:00:00.000Z');
+    assert.equal(pagoAnulado.motivoAnulacion, 'Se cargó al pedido equivocado.');
     // El pago anulado sigue visible, no se borra.
     assert.equal(conAnulacion.pagos.length, 1);
 
+    const mensajeAnterior = conAnulacion.historial.find((evento) => evento.id === 'mensaje-pago-pago-1');
+    assert.equal(mensajeAnterior.vigente, false);
+    assert.equal(mensajeAnterior.motivoInvalidacion, 'Se cargó al pedido equivocado.');
+
     assert.deepEqual(
       conAnulacion.historial.map((evento) => evento.tipo),
-      ['CREADO', 'PAGO', 'PAGO_ANULADO']
+      ['CREADO', 'PAGO', 'MENSAJE_GENERADO', 'PAGO_ANULADO']
     );
+    assert.equal(conAnulacion.historial.at(-1).id, 'anulacion-1');
   });
 
   test('no se puede anular un pago inexistente ni uno ya anulado', () => {
@@ -175,6 +183,46 @@ describe('criterio 14 — anulación de pago', () => {
 
     const anulado = anularPago(pedido, 'pago-1', '2026-07-20T12:00:00.000Z');
     assert.throws(() => anularPago(anulado, 'pago-1', '2026-07-20T13:00:00.000Z'), /ya está anulado/);
+  });
+});
+
+describe('corrección de entrega', () => {
+  test('vuelve el pedido a pendiente, conserva el historial e invalida el mensaje anterior', () => {
+    let pedido = pedidoDeEjemplo();
+    pedido = marcarEntregado(pedido, '2026-07-21T18:00:00.000Z', 'entrega-1');
+    pedido = registrarMensaje(pedido, {
+      id: 'mensaje-entrega-entrega-1',
+      fecha: '2026-07-21T18:01:00.000Z',
+      texto: 'Pedido entregado',
+      categoria: 'entrega',
+      relacionadoId: 'entrega-1',
+    });
+
+    const corregido = corregirEntrega(pedido, '2026-07-21T19:00:00.000Z', 'Se marcó por error.', 'correccion-1');
+
+    assert.equal(corregido.estadoEntrega, 'PENDIENTE');
+    assert.equal(corregido.historial.at(-1).tipo, 'REABIERTO');
+    assert.equal(corregido.historial.at(-1).motivo, 'Se marcó por error.');
+    assert.equal(corregido.historial.find((evento) => evento.id === 'mensaje-entrega-entrega-1').vigente, false);
+    assert.throws(() => corregirEntrega(corregido, '2026-07-21T20:00:00.000Z', 'Otro motivo'), /no está marcado como entregado/);
+  });
+
+  test('al volver a entregar invalida el mensaje previo de corrección', () => {
+    let pedido = pedidoDeEjemplo();
+    pedido = marcarEntregado(pedido, '2026-07-21T18:00:00.000Z', 'entrega-1');
+    pedido = corregirEntrega(pedido, '2026-07-21T19:00:00.000Z', 'Se marcó por error.', 'correccion-1');
+    pedido = registrarMensaje(pedido, {
+      id: 'mensaje-entrega_corregida-correccion-1',
+      fecha: '2026-07-21T19:01:00.000Z',
+      texto: 'Continúa pendiente',
+      categoria: 'entrega_corregida',
+      relacionadoId: 'correccion-1',
+    });
+
+    const entregadoOtraVez = marcarEntregado(pedido, '2026-07-22T10:00:00.000Z', 'entrega-2');
+    assert.equal(entregadoOtraVez.estadoEntrega, 'ENTREGADO');
+    assert.equal(entregadoOtraVez.historial.find((evento) => evento.id === 'mensaje-entrega_corregida-correccion-1').vigente, false);
+    assert.equal(entregadoOtraVez.historial.at(-1).id, 'entrega-2');
   });
 });
 
@@ -195,5 +243,6 @@ test('registrar mensaje conserva el texto completo en el historial', () => {
   assert.equal(mensaje.id, 'm1');
   assert.equal(mensaje.texto, 'Hola\nTotal: $ 1.000');
   assert.equal(mensaje.categoria, 'pago');
+  assert.equal(mensaje.vigente, true);
   assert.equal(registrarMensaje(resultado, { id: 'm1', fecha: '2026-09-14T10:01:00Z', texto: 'Duplicado' }).historial.length, resultado.historial.length);
 });

@@ -39,6 +39,14 @@ function agregarEventoHistorial(historial, tipo, fecha, descripcion) {
   return [...historial, { tipo, fecha, descripcion }];
 }
 
+function invalidarMensajes(historial, coincide, fechaInvalidacion, motivoInvalidacion) {
+  return historial.map((evento) =>
+    evento.tipo === 'MENSAJE_GENERADO' && evento.vigente !== false && coincide(evento)
+      ? { ...evento, vigente: false, fechaInvalidacion, motivoInvalidacion }
+      : evento
+  );
+}
+
 /**
  * datos: { id, numero, fecha, clienteNombre, clienteTelefono, notaInterna, lineas }
  * `lineas` ya vienen armadas por quien llama (tipo, refId, nombreCongelado,
@@ -109,7 +117,7 @@ export function registrarPago(pedido, { id, fecha, monto, medio, nota = '' }) {
  * Anula un pago existente: lo deja visible, tachado (`anulado: true`), con
  * `fechaAnulacion`, y recalcula el saldo sin contarlo (criterio 14).
  */
-export function anularPago(pedido, pagoId, fechaAnulacion) {
+export function anularPago(pedido, pagoId, fechaAnulacion, motivo = 'Sin motivo informado.', correccionId = null) {
   const pagoExistente = pedido.pagos.find((pago) => pago.id === pagoId);
   if (!pagoExistente) {
     throw new Error(`No existe el pago ${pagoId} en el pedido ${pedido.id}.`);
@@ -118,45 +126,96 @@ export function anularPago(pedido, pagoId, fechaAnulacion) {
     throw new Error(`El pago ${pagoId} ya está anulado.`);
   }
 
+  const motivoLimpio = String(motivo).trim();
+  if (!motivoLimpio) {
+    throw new Error('Indicá el motivo de la anulación.');
+  }
+
   const pagos = pedido.pagos.map((pago) =>
-    pago.id === pagoId ? { ...pago, anulado: true, fechaAnulacion } : pago
+    pago.id === pagoId ? { ...pago, anulado: true, fechaAnulacion, motivoAnulacion: motivoLimpio } : pago
   );
   const pedidoConAnulacion = { ...pedido, pagos };
   const { saldo: saldoResultante } = calcularDerivados(pedidoConAnulacion);
 
-  const historial = agregarEventoHistorial(
+  const historialPrevio = invalidarMensajes(
     pedido.historial,
+    (evento) => evento.categoria === 'pago' && (evento.relacionadoId === pagoId || evento.id === `mensaje-pago-${pagoId}`),
+    fechaAnulacion,
+    motivoLimpio
+  );
+  const historial = agregarEventoHistorial(
+    historialPrevio,
     'PAGO_ANULADO',
     fechaAnulacion,
-    `Pago de ${pagoExistente.monto} anulado. Saldo resultante: ${saldoResultante}.`
+    `Pago de ${pagoExistente.monto} anulado. Motivo: ${motivoLimpio}. Saldo resultante: ${saldoResultante}.`
   );
+  const ultimo = historial[historial.length - 1];
 
-  return { ...pedidoConAnulacion, historial };
+  return { ...pedidoConAnulacion, historial: [...historial.slice(0, -1), { ...ultimo, id: correccionId, relacionadoId: pagoId, motivo: motivoLimpio }] };
 }
 
-export function marcarEntregado(pedido, fecha) {
+export function marcarEntregado(pedido, fecha, entregaId = null) {
   if (pedido.estadoEntrega === 'ENTREGADO') {
     throw new Error(`El pedido ${pedido.id} ya está marcado como entregado.`);
   }
 
-  const historial = agregarEventoHistorial(
+  const historialPrevio = invalidarMensajes(
     pedido.historial,
+    (evento) => evento.categoria === 'entrega_corregida',
+    fecha,
+    'El pedido fue marcado nuevamente como entregado.'
+  );
+  const historial = agregarEventoHistorial(
+    historialPrevio,
     'ENTREGADO',
     fecha,
     'Pedido marcado como entregado.'
   );
+  const ultimo = historial[historial.length - 1];
 
-  return { ...pedido, estadoEntrega: 'ENTREGADO', historial };
+  return { ...pedido, estadoEntrega: 'ENTREGADO', historial: [...historial.slice(0, -1), { ...ultimo, id: entregaId }] };
 }
 
-export function registrarMensaje(pedido, { id, fecha, texto, categoria = 'confirmacion' }) {
+export function corregirEntrega(pedido, fecha, motivo, correccionId = null) {
+  if (pedido.estadoEntrega !== 'ENTREGADO') {
+    throw new Error(`El pedido ${pedido.id} no está marcado como entregado.`);
+  }
+
+  const motivoLimpio = String(motivo).trim();
+  if (!motivoLimpio) {
+    throw new Error('Indicá el motivo de la corrección de entrega.');
+  }
+
+  const historialPrevio = invalidarMensajes(
+    pedido.historial,
+    (evento) => evento.categoria === 'entrega',
+    fecha,
+    motivoLimpio
+  );
+  const historial = agregarEventoHistorial(
+    historialPrevio,
+    'REABIERTO',
+    fecha,
+    `Entrega corregida. Motivo: ${motivoLimpio}. El pedido vuelve a pendiente.`
+  );
+  const ultimo = historial[historial.length - 1];
+
+  return {
+    ...pedido,
+    estadoEntrega: 'PENDIENTE',
+    historial: [...historial.slice(0, -1), { ...ultimo, id: correccionId, motivo: motivoLimpio }],
+  };
+}
+
+export function registrarMensaje(pedido, { id, fecha, texto, categoria = 'confirmacion', relacionadoId = null }) {
   if (pedido.historial.some((evento) => evento.tipo === 'MENSAJE_GENERADO' && evento.id === id)) return pedido;
+  const categoriaLegible = categoria.replaceAll('_', ' ');
   const historial = agregarEventoHistorial(
     pedido.historial,
     'MENSAJE_GENERADO',
     fecha,
-    `Mensaje de ${categoria} generado para el pedido #${pedido.numero}.`
+    `Mensaje de ${categoriaLegible} generado para el pedido #${pedido.numero}.`
   );
   const ultimo = historial[historial.length - 1];
-  return { ...pedido, historial: [...historial.slice(0, -1), { ...ultimo, id, texto, categoria }] };
+  return { ...pedido, historial: [...historial.slice(0, -1), { ...ultimo, id, texto, categoria, relacionadoId, vigente: true }] };
 }

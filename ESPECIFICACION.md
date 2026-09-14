@@ -201,8 +201,9 @@ Reglas:
 - Un pago no puede superar el saldo pendiente. Si el cliente paga de más, se
   registra el excedente en la nota y se avisa; no se guarda un saldo negativo.
 - **Un pago registrado no se edita: se anula.** La anulación deja el pago
-  visible, tachado, con su fecha y la fecha de anulación. La trazabilidad de
-  plata cobrada no se borra nunca.
+  visible, tachado, con su fecha, la fecha de anulación y el motivo. Recalcula
+  pagado, saldo y estado de cobro. La trazabilidad de plata cobrada no se borra
+  nunca.
 - Si se modifica el pedido después de cobrar una seña y el nuevo total queda por
   debajo de lo ya pagado, la app lo impide y explica por qué.
 
@@ -243,6 +244,9 @@ reemplaza al generar el mensaje.
 | `{total}` | Total del pedido |
 | `{pagado}` | Total cobrado hasta el momento |
 | `{saldo}` | Saldo pendiente |
+| `{montoPago}` | Importe del pago puntual |
+| `{medioPago}` | Medio utilizado para el pago puntual |
+| `{motivo}` | Motivo de una anulación o corrección |
 
 **No existe un marcador para la nota del pedido.** La nota es interna, del
 dueño, y no debe poder filtrarse a un mensaje ni por error. Si alguien escribe
@@ -253,7 +257,7 @@ dueño, y no debe poder filtrarse a un mensaje ni por error. Si alguien escribe
 se omite del mensaje generado. Así una sola plantilla sirve para un pedido con
 seña y para uno sin seña, sin mantener dos textos.
 
-Tres plantillas, cada una con su valor inicial y un botón para restaurarlo:
+Seis plantillas, cada una con su valor inicial y un botón para restaurarlo:
 
 **`confirmacion`** — valor inicial:
 
@@ -272,9 +276,13 @@ Saldo: {saldo}
 **`pago`** — valor inicial:
 
 ```
-¡Hola {cliente}! Registré tu pago de {pagado} para el pedido #{numero}.
+¡Hola {cliente}! Registré tu pago de {montoPago} por {medioPago} para el pedido #{numero}.
+Total abonado: {pagado}.
 Saldo pendiente: {saldo}. ¡Gracias!
 ```
+
+**`pago_anulado`** informa el pago corregido, el motivo, el total abonado
+actualizado y el nuevo saldo.
 
 **`recordatorio`** — valor inicial:
 
@@ -282,6 +290,9 @@ Saldo pendiente: {saldo}. ¡Gracias!
 ¡Hola {cliente}! Te recuerdo que el pedido #{numero} tiene un saldo
 pendiente de {saldo}. ¡Cualquier duda me escribís!
 ```
+
+**`entrega`** confirma que el pedido fue entregado. **`entrega_corregida`**
+informa que el pedido vuelve a estar pendiente e incluye el motivo.
 
 Reglas de la pantalla de edición:
 
@@ -430,7 +441,8 @@ Ficha del pedido:
 2. Líneas del pedido.
 3. Bloque **Pagos**: lista de pagos con fecha, monto y medio, y un botón
    "Registrar pago". El formulario propone el saldo completo como monto, para
-   que cobrar el total sea un toque, y permite reducirlo para una seña.
+   que cobrar el total sea un toque, y permite reducirlo para una seña. Cada
+   pago activo ofrece "Anular pago" y exige un motivo antes de confirmar.
 4. Bloque **Historial**: línea de tiempo con la fecha y hora de cada instancia,
    de la más reciente a la más antigua.
 5. Botones de acción: "Marcar entregado", "Copiar mensaje" y "Abrir WhatsApp".
@@ -442,7 +454,9 @@ pago", "Marcar entregado", "Copiar mensaje" y "Abrir WhatsApp". No se
 construyen dos pantallas distintas.
 
 Marcar la entrega y registrar un pago son acciones separadas. Se puede retroceder
-la entrega; los pagos se anulan, no se retroceden.
+la entrega con "Corregir entrega" y un motivo obligatorio; los pagos se anulan,
+no se retroceden. Ambas correcciones generan un mensaje de rectificación. Los
+mensajes anteriores afectados se conservan y se marcan como "Ya no vigente".
 
 **No hay baja individual de pedidos.** El numerador es correlativo y el
 historial es de solo agregado. Las pruebas se limpian borrando toda la base
@@ -710,38 +724,41 @@ Los tres usan `;` como separador y `.` como decimal.
 13. El historial de ese pedido contiene, con fecha y hora, los eventos de
     creación, los dos pagos y la entrega, en orden.
 14. Anular un pago recalcula el saldo y deja el pago visible como anulado.
+    Conserva el motivo, invalida el mensaje del pago y genera una rectificación.
+15. Corregir una entrega vuelve el pedido a `PENDIENTE`, conserva el motivo,
+    invalida el mensaje de entrega y genera una rectificación.
 
 ### 8.4 Mensajes
 
-15. La plantilla de confirmación reemplaza todos los marcadores; editarla en
+16. La plantilla de confirmación reemplaza todos los marcadores; editarla en
     configuración cambia el mensaje generado sin tocar el código.
-16. Un pedido sin seña genera un mensaje sin los renglones de seña y saldo;
+17. Un pedido sin seña genera un mensaje sin los renglones de seña y saldo;
     el mismo pedido con una seña los incluye, usando la misma plantilla.
-17. La nota interna no aparece en ningún mensaje generado.
+18. La nota interna no aparece en ningún mensaje generado.
 
 ### 8.5 Estilos e interfaz
 
-18. Los cuatro tests del guardián de literales (sección 6.2) pasan.
-19. **Contraste**: cada par de tokens declarado en la tabla de "Reglas de uso"
+19. Los cuatro tests del guardián de literales (sección 6.2) pasan.
+20. **Contraste**: cada par de tokens declarado en la tabla de "Reglas de uso"
     de DISEÑO.md alcanza 4,5:1. Se calcula parseando `tokens.css`, sin navegador.
-20. **A 360 px de ancho, con el catálogo real cargado**: ningún importe partido
+21. **A 360 px de ancho, con el catálogo real cargado**: ningún importe partido
     en dos líneas, ninguna superficie interactiva menor a 48 × 48 px, 96 px de
     relleno inferior en las listas. Se verifica con Playwright sobre Chromium.
     **No es automatizable en jsdom**, que no tiene motor de layout y devuelve
     ceros: un test así siempre pasa y no mide nada.
-21. Ninguna hoja de estilos ni documento referencia una fuente remota, y las
+22. Ninguna hoja de estilos ni documento referencia una fuente remota, y las
     familias empaquetadas incluyen todos los pesos que usa DISEÑO.md.
 
 ### 8.6 PWA
 
-22. La app carga y opera con el modo avión activado, incluida la importación
+23. La app carga y opera con el modo avión activado, incluida la importación
     de un Excel y la copia del mensaje al portapapeles.
-23. El `scope` y el `start_url` del manifest incluyen `/candelaria/`, y el
+24. El `scope` y el `start_url` del manifest incluyen `/candelaria/`, y el
     service worker se registra con ese scope. Si quedan en `/`, el service
     worker no controla la app y el modo avión falla en silencio.
-24. Al haber una versión nueva, la app avisa y permite actualizar; no se queda
+25. Al haber una versión nueva, la app avisa y permite actualizar; no se queda
     con la versión vieja cacheada.
-25. Al instalar se solicita `navigator.storage.persist()`.
+26. Al instalar se solicita `navigator.storage.persist()`.
 
 Caso de referencia para depurar — **V1 Pino chico**:
 

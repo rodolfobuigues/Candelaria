@@ -33,6 +33,7 @@ export function App() {
   const filtroOrigen = parametrosRuta.get('filtro');
   const tipoMensaje = parametrosRuta.get('tipo') ?? 'confirmacion';
   const pagoIdMensaje = parametrosRuta.get('pagoId');
+  const accionIdMensaje = parametrosRuta.get('accionId');
   const esFichaProducto = rutaBase.startsWith('producto/');
   const esPedido = rutaBase.startsWith('pedido/');
   const esMensaje = rutaBase.startsWith('mensaje/');
@@ -64,7 +65,7 @@ export function App() {
         {esFichaProducto && <FichaProducto codigo={codigoProducto} />}
         {rutaBase === 'vender' && <Vender />}
         {esPedido && <Pedido id={idPedido} origen={origen ?? 'pedidos'} filtroOrigen={filtroOrigen} />}
-        {esMensaje && <Mensaje id={idMensaje} tipo={tipoMensaje} pagoId={pagoIdMensaje} />}
+        {esMensaje && <Mensaje id={idMensaje} tipo={tipoMensaje} pagoId={pagoIdMensaje} accionId={accionIdMensaje} />}
         {esRegistroPago && <RegistroPago id={idRegistroPago} origen={origen ?? 'pedidos'} filtroOrigen={filtroOrigen} />}
         {esInsumoForm && <InsumoForm id={idInsumo} />}
         {esProductoForm && <ProductoForm id={idProductoForm} />}

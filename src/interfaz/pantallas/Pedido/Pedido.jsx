@@ -3,10 +3,14 @@ import { h } from 'preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { abrirDB } from '../../../persistencia/db.js';
 import { obtenerPedido, guardarPedido } from '../../../persistencia/pedidosRepo.js';
-import { calcularDerivados, marcarEntregado, registrarMensaje } from '../../../persistencia/pedidoLogica.js';
+import { anularPago, calcularDerivados, corregirEntrega, marcarEntregado, registrarMensaje } from '../../../persistencia/pedidoLogica.js';
 import { construirMensajePedido } from '../../../persistencia/mensajes.js';
 import { formatearFecha, formatearFechaHora, formatearImporte } from '../../../config/formato.js';
 import { navegarA } from '../../enrutador.js';
+
+function idNuevo(prefijo) {
+  return `${prefijo}-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+}
 
 function LineasPedido({ pedido }) {
   return (
@@ -38,7 +42,7 @@ function Totales({ pedido }) {
   );
 }
 
-function BloquePagos({ pedido, registrar }) {
+function BloquePagos({ pedido, registrar, pagoEnCorreccion, motivo, cambiarMotivo, solicitarAnulacion, cancelarCorreccion, confirmarAnulacion, guardando }) {
   return (
     <section class="ficha-seccion">
       <h2 class="texto-seccion">Pagos</h2>
@@ -47,8 +51,31 @@ function BloquePagos({ pedido, registrar }) {
         <ul class="pedido-pagos">
           {pedido.pagos.map((pago) => (
             <li key={pago.id} class={pago.anulado ? 'pago-anulado' : ''}>
-              <span>{formatearFecha(pago.fecha)} · {pago.medio}</span>
-              <strong class="importe">{formatearImporte(pago.monto)}</strong>
+              <div class="pedido-pago__resumen">
+                <span>{formatearFecha(pago.fecha)} · {pago.medio}</span>
+                <strong class="importe">{formatearImporte(pago.monto)}</strong>
+              </div>
+              {pago.anulado && (
+                <div class="pedido-correccion__detalle">
+                  <strong>ANULADO · {formatearFechaHora(pago.fechaAnulacion)}</strong>
+                  <span>Motivo: {pago.motivoAnulacion ?? 'Sin motivo informado.'}</span>
+                </div>
+              )}
+              {!pago.anulado && pagoEnCorreccion !== pago.id && (
+                <button type="button" class="boton-secundario" disabled={guardando} onClick={() => solicitarAnulacion(pago.id)}>Anular pago</button>
+              )}
+              {pagoEnCorreccion === pago.id && (
+                <div class="pedido-correccion">
+                  <label class="campo-entrada">
+                    <span>Motivo de la anulación *</span>
+                    <textarea rows="3" value={motivo} onInput={(evento) => cambiarMotivo(evento.currentTarget.value)} />
+                  </label>
+                  <div class="fila-botones">
+                    <button type="button" class="boton-secundario" disabled={guardando} onClick={cancelarCorreccion}>Cancelar</button>
+                    <button type="button" class="boton-primario" disabled={guardando || !motivo.trim()} onClick={() => confirmarAnulacion(pago.id)}>Confirmar anulación</button>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -85,9 +112,13 @@ function MensajesGenerados({ pedido, copiar }) {
       <h2 class="texto-seccion">Mensajes generados</h2>
       <ul class="pedido-mensajes">
         {mensajes.map((evento) => (
-          <li key={evento.id ?? evento.fecha}>
-            <span class="texto-cuerpo-s">{evento.categoria ? `${evento.categoria[0].toUpperCase()}${evento.categoria.slice(1)} · ` : ''}{formatearFechaHora(evento.fecha)}</span>
+          <li key={evento.id ?? evento.fecha} class={evento.vigente === false ? 'mensaje-no-vigente' : ''}>
+            <span class="texto-cuerpo-s">{evento.categoria ? `${evento.categoria.replaceAll('_', ' ').replace(/^./, (letra) => letra.toUpperCase())} · ` : ''}{formatearFechaHora(evento.fecha)}</span>
+            {evento.vigente === false && (
+              <span class="mensaje-no-vigente__estado">YA NO VIGENTE · {formatearFechaHora(evento.fechaInvalidacion)}</span>
+            )}
             <pre class="mensaje-contenido">{evento.texto}</pre>
+            {evento.vigente === false && <span class="texto-cuerpo-s">Motivo: {evento.motivoInvalidacion}</span>}
             <button type="button" class="boton-secundario" onClick={() => copiar(evento)}>Copiar mensaje</button>
           </li>
         ))}
@@ -100,6 +131,8 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
   const [pedido, setPedido] = useState(null);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [correccion, setCorreccion] = useState(null);
+  const [motivoCorreccion, setMotivoCorreccion] = useState('');
   const mensaje = useMemo(() => pedido && construirMensajePedido(pedido), [pedido]);
 
   useEffect(() => {
@@ -135,9 +168,47 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
   }
 
   function marcarComoEntregado() {
+    const entregaId = idNuevo('entrega');
     actualizar(
-      (actual, fecha) => marcarEntregado(actual, fecha),
-      () => navegarA(`mensaje/${pedido.id}?tipo=entrega&origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)
+      (actual, fecha) => marcarEntregado(actual, fecha, entregaId),
+      () => navegarA(`mensaje/${pedido.id}?tipo=entrega&accionId=${encodeURIComponent(entregaId)}&origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)
+    );
+  }
+
+  function solicitarCorreccion(tipo, id = null) {
+    setError(null);
+    setCorreccion({ tipo, id });
+    setMotivoCorreccion('');
+  }
+
+  function cancelarCorreccion() {
+    setCorreccion(null);
+    setMotivoCorreccion('');
+  }
+
+  function confirmarAnulacionPago(pagoId) {
+    const motivo = motivoCorreccion.trim();
+    if (!motivo) {
+      setError('Indicá el motivo de la anulación.');
+      return;
+    }
+    const correccionId = idNuevo('anulacion-pago');
+    actualizar(
+      (actual, fecha) => anularPago(actual, pagoId, fecha, motivo, correccionId),
+      () => navegarA(`mensaje/${pedido.id}?tipo=pago_anulado&pagoId=${encodeURIComponent(pagoId)}&accionId=${encodeURIComponent(correccionId)}&origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)
+    );
+  }
+
+  function confirmarCorreccionEntrega() {
+    const motivo = motivoCorreccion.trim();
+    if (!motivo) {
+      setError('Indicá el motivo de la corrección de entrega.');
+      return;
+    }
+    const correccionId = idNuevo('correccion-entrega');
+    actualizar(
+      (actual, fecha) => corregirEntrega(actual, fecha, motivo, correccionId),
+      () => navegarA(`mensaje/${pedido.id}?tipo=entrega_corregida&accionId=${encodeURIComponent(correccionId)}&origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)
     );
   }
 
@@ -185,13 +256,38 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
         <Totales pedido={pedido} />
       </section>
 
-      <BloquePagos pedido={pedido} registrar={() => navegarA(`pago/${pedido.id}?origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)} />
+      <BloquePagos
+        pedido={pedido}
+        registrar={() => navegarA(`pago/${pedido.id}?origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)}
+        pagoEnCorreccion={correccion?.tipo === 'pago' ? correccion.id : null}
+        motivo={motivoCorreccion}
+        cambiarMotivo={setMotivoCorreccion}
+        solicitarAnulacion={(pagoId) => solicitarCorreccion('pago', pagoId)}
+        cancelarCorreccion={cancelarCorreccion}
+        confirmarAnulacion={confirmarAnulacionPago}
+        guardando={guardando}
+      />
       <MensajesGenerados pedido={pedido} copiar={copiarMensaje} />
       <Historial pedido={pedido} />
 
       {error && <p class="aviso">{error}</p>}
       <section class="pedido-acciones">
         {pedido.estadoEntrega === 'PENDIENTE' && <button type="button" class="boton-primario" disabled={guardando} onClick={marcarComoEntregado}>Marcar entregado</button>}
+        {pedido.estadoEntrega === 'ENTREGADO' && correccion?.tipo !== 'entrega' && (
+          <button type="button" class="boton-secundario" disabled={guardando} onClick={() => solicitarCorreccion('entrega')}>Corregir entrega</button>
+        )}
+        {correccion?.tipo === 'entrega' && (
+          <section class="pedido-correccion tarjeta">
+            <label class="campo-entrada">
+              <span>Motivo de la corrección de entrega *</span>
+              <textarea rows="3" value={motivoCorreccion} onInput={(evento) => setMotivoCorreccion(evento.currentTarget.value)} />
+            </label>
+            <div class="fila-botones">
+              <button type="button" class="boton-secundario" disabled={guardando} onClick={cancelarCorreccion}>Cancelar</button>
+              <button type="button" class="boton-primario" disabled={guardando || !motivoCorreccion.trim()} onClick={confirmarCorreccionEntrega}>Confirmar corrección</button>
+            </div>
+          </section>
+        )}
         <button type="button" class="boton-secundario" onClick={copiarMensaje}>Copiar mensaje</button>
       </section>
     </section>

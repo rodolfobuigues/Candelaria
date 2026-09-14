@@ -7,13 +7,20 @@ import { registrarMensaje, calcularDerivados } from '../../../persistencia/pedid
 import { construirMensajePedido } from '../../../persistencia/mensajes.js';
 import { formatearImporte } from '../../../config/formato.js';
 
-const TITULOS = { confirmacion: 'Confirmación lista', pago: 'Mensaje de pago listo', entrega: 'Mensaje de entrega listo', recordatorio: 'Recordatorio listo' };
+const TITULOS = {
+  confirmacion: 'Confirmación lista',
+  pago: 'Mensaje de pago listo',
+  pago_anulado: 'Rectificación de pago lista',
+  entrega: 'Mensaje de entrega listo',
+  entrega_corregida: 'Rectificación de entrega lista',
+  recordatorio: 'Recordatorio listo',
+};
 
-export function Mensaje({ id, tipo = 'confirmacion', pagoId = null }) {
+export function Mensaje({ id, tipo = 'confirmacion', pagoId = null, accionId = null }) {
   const [pedido, setPedido] = useState(null);
   const [error, setError] = useState(null);
   const [copiado, setCopiado] = useState(false);
-  const mensaje = useMemo(() => pedido && construirMensajePedido(pedido, { tipo, pagoId }), [pedido, tipo, pagoId]);
+  const mensaje = useMemo(() => pedido && construirMensajePedido(pedido, { tipo, pagoId, accionId }), [pedido, tipo, pagoId, accionId]);
 
   useEffect(() => {
     let activo = true;
@@ -22,9 +29,10 @@ export function Mensaje({ id, tipo = 'confirmacion', pagoId = null }) {
         const db = await abrirDB();
         const resultado = await obtenerPedido(db, id);
         if (!resultado) throw new Error('No encontramos ese pedido.');
-        const texto = construirMensajePedido(resultado, { tipo, pagoId });
-        const idMensaje = `mensaje-${tipo}-${pagoId ?? resultado.id}`;
-        const registrado = registrarMensaje(resultado, { id: idMensaje, fecha: new Date().toISOString(), texto, categoria: tipo });
+        const texto = construirMensajePedido(resultado, { tipo, pagoId, accionId });
+        const relacionadoId = accionId ?? pagoId ?? resultado.id;
+        const idMensaje = `mensaje-${tipo}-${relacionadoId}`;
+        const registrado = registrarMensaje(resultado, { id: idMensaje, fecha: new Date().toISOString(), texto, categoria: tipo, relacionadoId });
         await guardarPedido(db, registrado);
         if (activo) setPedido({ ...registrado, ...calcularDerivados(registrado) });
       } catch (e) {
@@ -33,7 +41,7 @@ export function Mensaje({ id, tipo = 'confirmacion', pagoId = null }) {
     }
     cargar();
     return () => { activo = false; };
-  }, [id, tipo, pagoId]);
+  }, [id, tipo, pagoId, accionId]);
 
   async function copiar() {
     try {
