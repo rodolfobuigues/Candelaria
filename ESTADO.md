@@ -1,6 +1,6 @@
 # Candelaria — Estado del proyecto
 
-**Actualizado: 14/09/2026**
+**Actualizado: 15/09/2026**
 
 Documento vivo. Se actualiza al cerrar cada fase. Es lo primero que hay que leer
 al abrir un chat nuevo.
@@ -14,10 +14,10 @@ al abrir un chat nuevo.
 | Carpeta | `D:\Colo\Candelaria` |
 | Repositorio | `https://github.com/rodolfobuigues/Candelaria.git`, rama `main` |
 | Publicación | `https://rodolfobuigues.github.io/Candelaria/`, despliegue automático por GitHub Actions |
-| Tests | `npm test` en verde el 14/09/2026 |
-| Compilación | `npm run build` correcta el 14/09/2026 |
+| Tests | `npm test`: 255 pruebas en verde el 15/09/2026 |
+| Compilación | `npm run build` correcta el 15/09/2026 |
 | Estado actual | Catálogo, costos, pedidos, mensajes, fotos y ajustes conectados a Supabase |
-| Próximo paso | Completar la instalación PWA y su validación real en Android |
+| Próximo paso | Validar exportación/revisión XLSX sin cambios en Android; no importar datos de prueba |
 
 ### Fuente de datos vigente
 
@@ -43,7 +43,7 @@ usarse para sobrescribir el catálogo remoto.
 | 3a — Persistencia | ✅ | IndexedDB, respaldo JSON, pagos e historial |
 | 3b — Tokens de estilo | ✅ | Tokens, componentes, fuentes locales y guardián con 4 tests de control |
 | 4 — Interfaz | ✅ | **Cimientos ✅. 12 de 12 pantallas** |
-| 5 — Importador y Excel | 🔄 | Respaldo JSON seguro, CSV y lector inicial de planilla XLSX; falta completar la previsualización y aplicación validada de XLSX |
+| 5 — Importador y Excel | 🔄 | Exportación, revisión y aplicación transaccional XLSX; función instalada y probada en tablas temporales, pendiente validación XLSX en Android |
 | 6 — PWA publicada | ✅ | GitHub Pages activo; instalación, apertura desde icono, fotos y actualización verificadas en Android físico el 14/09/2026 |
 | 7 — Supabase | ✅ | Autenticación, tablas, RLS y catálogo remoto vigentes |
 | 8 — Endurecimiento | 🔄 | Correcciones de pedidos, navegación, mensajes, restauración protegida y fotos migradas a Storage |
@@ -204,7 +204,6 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 
 | Pendiente | Cuándo |
 |---|---|
-| Instalar `supabase/intercambio_excel.sql` en Supabase, previa autorización del creador. Hasta entonces XLSX permite exportar y revisar; aplicar se bloquea sin modificar datos | Intercambio Excel |
 | Validar exportación/revisión XLSX en el teléfono Android real. No aplicar cambios de prueba sobre el catálogo vigente | Intercambio Excel |
 | No corregir materiales sin costo o fórmulas dudosas sin consulta previa | Regla permanente |
 
@@ -243,9 +242,10 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 - No carga fixtures ni Excel histórico. Conserva fotos, campos ajenos al
   intercambio y registros omitidos. No corrige materiales sin costo. La precisión
   de 15 cifras de Excel no reescribe valores vigentes por diferencias residuales.
-- Aplicación preparada como una sola transacción, con respaldo JSON previo y
-  doble control de cambios concurrentes. Supabase requiere instalar la función
-  invocadora con RLS de `supabase/intercambio_excel.sql`; sin ella no se escribe.
+- Aplicación como una sola transacción, con respaldo JSON previo y doble control
+  de cambios concurrentes. La función de `supabase/intercambio_excel.sql` quedó
+  instalada el 15/09/2026 con autorización explícita. Respeta RLS y los permisos
+  del invocador: `authenticated` puede ejecutarla y `anon` no puede.
 - CSV legado pasa también por la revisión previa, sin sobrescribir fotos ni
   recetas automáticamente. Números exportados con coma decimal y separador `;`.
 - Prueba aislada con una lectura del Supabase vigente: 30 insumos, 81 productos,
@@ -259,6 +259,16 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
   Libro aislado reimportado y renderizado para revisión visual.
 - Los recursos dinámicos de Excel se incluyen en el listado de precaché PWA.
   El catálogo público sigue sin exponer recetas, costos ni pedidos.
+- Instalación verificada sin importar datos: idénticas huellas antes y después
+  en insumos, productos, combos, parámetros, pedidos y catálogo público. Se
+  mantienen 30 insumos, 81 productos, 24 combos, 0 parámetros y 3 pedidos,
+  incluidas las fotos y las colecciones anidadas de pedidos.
+- `supabase/intercambio_excel.test.sql` probó una copia de la función instalada
+  exclusivamente en `pg_temp`, sin copiar registros vigentes. Validó sesión,
+  operación sin cambios, concurrencia, exclusión de pedidos, las cuatro tablas,
+  altas, preservación de fotos y reversión integral ante una escritura inválida.
+  `ROLLBACK` descartó todos los objetos de prueba. No se ejecutó una importación
+  sobre el catálogo real; queda pendiente una validación funcional desde Android.
 
 ---
 
