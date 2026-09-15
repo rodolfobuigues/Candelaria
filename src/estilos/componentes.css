@@ -1214,6 +1214,63 @@ h1, h2, h3 {
   gap: var(--esp-elemento);
 }
 
+.importacion-revision > *,
+.importacion-cambios li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.importacion-contadores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-stack-s);
+}
+
+.importacion-contadores > div {
+  display: grid;
+  gap: var(--esp-stack-s);
+  padding: var(--esp-stack-s);
+  border-radius: var(--radio-m);
+  background: var(--color-surface-container-low);
+  text-align: center;
+  font: var(--texto-cuerpo-s);
+}
+
+.importacion-cambios {
+  display: grid;
+  gap: var(--esp-elemento);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.importacion-cambios li {
+  display: grid;
+  gap: var(--esp-stack-s);
+  padding-bottom: var(--esp-elemento);
+  border-bottom: var(--borde-fino) solid var(--color-outline-variant);
+}
+
+.importacion-cambios dl,
+.importacion-cambios dd {
+  margin: 0;
+}
+
+.importacion-cambios dt {
+  font: var(--texto-cuerpo-s);
+}
+
+.importacion-cambios dd strong {
+  color: var(--color-primary);
+}
+
+.importacion-revision summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  cursor: pointer;
+}
+
 .importacion-hojas,
 .importacion-pendientes {
   margin: 0;

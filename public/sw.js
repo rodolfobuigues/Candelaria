@@ -1,4 +1,4 @@
-const CACHE = 'candelaria-v3';
+const CACHE = 'candelaria-v4';
 const BASE = '/Candelaria/';
 const INICIALES = [BASE, `${BASE}manifest.webmanifest`, `${BASE}icono-candelaria.svg`, `${BASE}icono-candelaria-maskable.svg`];
 
@@ -7,11 +7,15 @@ async function guardarVersionActual() {
   const respuestaHtml = await fetch(BASE, { cache: 'reload' });
   await cache.put(BASE, respuestaHtml.clone());
   const html = await respuestaHtml.text();
+  const version = await fetch(`${BASE}recursos-pwa.json`, { cache: 'reload' });
+  await cache.put(`${BASE}recursos-pwa.json`, version.clone());
+  const empaquetados = await version.json();
   const recursos = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)]
     .map((coincidencia) => new URL(coincidencia[1], self.location.origin))
     .filter((url) => url.origin === self.location.origin && url.pathname.startsWith(BASE))
     .map((url) => url.href);
-  await cache.addAll([...new Set([...INICIALES.slice(1), ...recursos])]);
+  const locales = empaquetados.filter((ruta) => /^assets\/[\w.-]+\.(js|css|woff2)$/.test(ruta)).map((ruta) => `${BASE}${ruta}`);
+  await cache.addAll([...new Set([...INICIALES.slice(1), ...recursos, ...locales])]);
 }
 
 self.addEventListener('install', (evento) => {

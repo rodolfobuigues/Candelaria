@@ -4,6 +4,7 @@
 // tests, el de fake-indexeddb).
 import { NOMBRE_DB, VERSION_DB, migrar } from './esquema.js';
 import { supabase, supabaseConfigurado } from '../config/supabase.js';
+import { ENTIDADES_EXCEL, firmaEstadoExcel } from './excelContrato.js';
 
 const TABLAS = {
   insumos: 'insumos',
@@ -85,5 +86,41 @@ export function eliminarPorId(db, tienda, id) {
     const solicitud = db.transaction(tienda, 'readwrite').objectStore(tienda).delete(id);
     solicitud.onsuccess = () => resolve();
     solicitud.onerror = () => reject(solicitud.error);
+  });
+}
+
+// La importación Excel solo agrega o actualiza; nunca elimina registros.
+// Compara el estado revisado dentro de la misma transacción que lo escribe.
+export function aplicarCambiosExcelAtomicos(db, cambios, previo, cliente = supabase) {
+  const claves = ENTIDADES_EXCEL.map(([, clave]) => clave);
+  if (cambios.some((cambio) => !claves.includes(cambio.clave) || !cambio.registro?.id)) return Promise.reject(new Error('La importación contiene una colección o un id no admitido.'));
+  const resultado = { nuevos: cambios.filter((cambio) => cambio.nuevo).length, modificados: cambios.filter((cambio) => !cambio.nuevo).length };
+  if (cambios.length === 0) return Promise.resolve(resultado);
+  if (remoto(db)) {
+    const estado = Object.fromEntries(claves.map((clave) => [clave, Object.fromEntries(previo[clave].map((registro) => [registro.id, aFila(clave, registro)]))]));
+    const destino = Object.fromEntries(claves.map((clave) => [clave, cambios.filter((cambio) => cambio.clave === clave).map((cambio) => aFila(clave, cambio.registro))]));
+    return cliente.rpc('aplicar_intercambio_excel', { p_estado: estado, p_cambios: destino }).then(({ error }) => {
+      if (error?.code === 'PGRST202' || error?.code === '42883') throw new Error('Falta instalar supabase/intercambio_excel.sql en Supabase. No se modificó ningún dato.');
+      if (error) throw new Error(error.message);
+      return resultado;
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(claves, 'readwrite');
+    const actual = {}; let pendientes = claves.length; let errorPropio = null;
+    tx.oncomplete = () => resolve(resultado);
+    tx.onerror = tx.onabort = () => reject(errorPropio ?? tx.error ?? new Error('La importación fue cancelada sin aplicar cambios.'));
+    for (const clave of claves) {
+      const solicitud = tx.objectStore(clave).getAll();
+      solicitud.onsuccess = () => {
+        actual[clave] = solicitud.result; pendientes -= 1;
+        if (pendientes !== 0) return;
+        if (firmaEstadoExcel(actual) !== firmaEstadoExcel(previo)) {
+          errorPropio = new Error('Los datos cambiaron desde la revisión. Volvé a revisar el archivo; no se aplicó ningún cambio.');
+          tx.abort(); return;
+        }
+        for (const cambio of cambios) tx.objectStore(cambio.clave).put(cambio.registro);
+      };
+    }
   });
 }

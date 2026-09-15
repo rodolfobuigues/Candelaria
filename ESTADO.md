@@ -204,7 +204,8 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 
 | Pendiente | Cuándo |
 |---|---|
-| Completar la previsualización y aplicación validada del importador XLSX sin sobrescribir silenciosamente datos remotos | Importación |
+| Instalar `supabase/intercambio_excel.sql` en Supabase, previa autorización del creador. Hasta entonces XLSX permite exportar y revisar; aplicar se bloquea sin modificar datos | Intercambio Excel |
+| Validar exportación/revisión XLSX en el teléfono Android real. No aplicar cambios de prueba sobre el catálogo vigente | Intercambio Excel |
 | No corregir materiales sin costo o fórmulas dudosas sin consulta previa | Regla permanente |
 
 ---
@@ -229,7 +230,35 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 | 11 | Ajustes | 8.8 | ✅ |
 | 12 | Editor de plantillas | 8.9 | ✅ |
 
-"Revisar importación" (8.10) se construye en la Fase 5, junto al importador.
+"Revisar importación" (8.10) implementada para XLSX y CSV en Ajustes.
+
+### Intercambio Excel — 15/09/2026
+
+- Implementados XLSX con ExcelJS 4.4.0 y revisión sin escrituras: altas,
+  modificaciones, registros sin cambios, diferencias campo por campo e impacto
+  sobre los precios vigentes. Las fórmulas en columnas editables se rechazan.
+- Exporta 11 hojas: Insumos, Productos, ProductosExtras, Combos, CombosLineas,
+  Parametros, Pedidos, PedidosLineas, PedidosPagos, PedidosHistorial e Instrucciones.
+  Pedidos y mensajes son solo consulta; el respaldo completo sigue siendo JSON.
+- No carga fixtures ni Excel histórico. Conserva fotos, campos ajenos al
+  intercambio y registros omitidos. No corrige materiales sin costo. La precisión
+  de 15 cifras de Excel no reescribe valores vigentes por diferencias residuales.
+- Aplicación preparada como una sola transacción, con respaldo JSON previo y
+  doble control de cambios concurrentes. Supabase requiere instalar la función
+  invocadora con RLS de `supabase/intercambio_excel.sql`; sin ella no se escribe.
+- CSV legado pasa también por la revisión previa, sin sobrescribir fotos ni
+  recetas automáticamente. Números exportados con coma decimal y separador `;`.
+- Prueba aislada con una lectura del Supabase vigente: 30 insumos, 81 productos,
+  24 combos; exportación/relectura XLSX dio 0 nuevos, 0 modificados, 0 precios
+  afectados y 0 escrituras. Se incluyeron los parámetros efectivos sin sembrarlos.
+- Simulación exclusivamente en memoria sobre esa lectura: un cambio de insumo
+  mostró una modificación y tres precios afectados, conservando el origen.
+  Revisión visual a 360 px. Ninguna importación real ejecutada.
+- 29 pruebas nuevas cubren XLSX real, preservación, validación, alta conjunta,
+  precisión, no-op, respaldo, concurrencia y rollback de una escritura fallida.
+  Libro aislado reimportado y renderizado para revisión visual.
+- Los recursos dinámicos de Excel se incluyen en el listado de precaché PWA.
+  El catálogo público sigue sin exponer recetas, costos ni pedidos.
 
 ---
 

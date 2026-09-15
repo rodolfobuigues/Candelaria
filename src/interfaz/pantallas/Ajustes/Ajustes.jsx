@@ -1,12 +1,14 @@
 /** @jsx h */
 import { h, Fragment } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { abrirDB, obtenerTodos, guardar } from '../../../persistencia/db.js';
+import { abrirDB, obtenerTodos } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { guardarParametros, obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
 import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
 import { exportarRespaldo, importarRespaldo, validarRespaldo } from '../../../persistencia/respaldo.js';
-import { leerXlsx } from '../../../persistencia/xlsxLectura.js';
+import { exportarExcel, revisarExcel as revisarArchivoExcel, aplicarRevisionExcel } from '../../../persistencia/excelRepo.js';
+import { prepararRevisionCSV } from '../../../persistencia/excelCSV.js';
+import { RevisionExcel } from '../../comun/RevisionExcel.jsx';
 import { supabase, supabaseConfigurado } from '../../../config/supabase.js';
 import { migrarFotosCatalogo, revisarMigracionFotos } from '../../../persistencia/fotosStorage.js';
 import { sincronizarCatalogoPublico } from '../../../persistencia/catalogoPublicoRepo.js';
@@ -30,6 +32,7 @@ export function Ajustes() {
   const [parametros, setParametros] = useState(null);
   const [mensaje, setMensaje] = useState(null);
   const [revision, setRevision] = useState(null);
+  const [ocupadoExcel, setOcupadoExcel] = useState(false);
   const [conteos, setConteos] = useState(null);
   const [revisionFotos, setRevisionFotos] = useState(null);
   const [migrandoFotos, setMigrandoFotos] = useState(false);
@@ -54,6 +57,37 @@ export function Ajustes() {
   }
   async function exportar() {
     const db = await abrirDB(); const respaldo = await exportarRespaldo(db); descargarRespaldoJSON(respaldo);
+  }
+  async function exportarXLSX() {
+    setOcupadoExcel(true); setMensaje(null);
+    try {
+      const db = await abrirDB();
+      const contenido = await exportarExcel(db);
+      const enlace = document.createElement('a');
+      enlace.href = URL.createObjectURL(new Blob([contenido], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      enlace.download = `candelaria-intercambio-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      enlace.click(); URL.revokeObjectURL(enlace.href);
+      setMensaje('Excel exportado con el catálogo vigente y los pedidos de consulta. No se modificó ningún dato.');
+    } catch (error) { setMensaje(`No se pudo exportar Excel: ${error.message}`); }
+    finally { setOcupadoExcel(false); }
+  }
+  async function aplicarExcel() {
+    if (ocupadoExcel || !revision?.valida || revision.cambios.length === 0) return;
+    if (!confirm(`Se crearán ${revision.resumen.nuevos} registros y se modificarán ${revision.resumen.modificados}. Cambian ${revision.cambiosPrecios.length} precios. Se descargará un respaldo JSON previo. Las fotos, los pedidos y los registros omitidos se conservarán. ¿Aplicar exclusivamente estos cambios?`)) return;
+    setOcupadoExcel(true);
+    try {
+      const db = await abrirDB();
+      const resultado = await aplicarRevisionExcel(db, revision, (previo) => descargarRespaldoJSON(previo, 'respaldo-candelaria-antes-de-excel'));
+      invalidarCatalogo(); setRevision(null);
+      setParametros(await obtenerParametrosVigentes(db)); await actualizarConteos();
+      try {
+        await sincronizarCatalogoPublico(db);
+        setMensaje(`Importación terminada: ${resultado.nuevos} nuevos y ${resultado.modificados} modificados. Se descargó el respaldo previo y se actualizó el catálogo público.`);
+      } catch (error) {
+        setMensaje(`Los cambios se guardaron correctamente, pero falta sincronizar el catálogo público: ${error.message}. Se reintentará al iniciar sesión.`);
+      }
+    } catch (error) { setMensaje(`No se pudo aplicar Excel: ${error.message}`); }
+    finally { setOcupadoExcel(false); }
   }
   async function revisarFotos() {
     try {
@@ -82,7 +116,7 @@ export function Ajustes() {
     } finally { setMigrandoFotos(false); }
   }
   async function importar(evento) {
-    const archivo = evento.currentTarget.files?.[0]; if (!archivo) return;
+    const entrada = evento.currentTarget; const archivo = entrada.files?.[0]; if (!archivo) return;
     try {
       const respaldo = validarRespaldo(JSON.parse(await archivo.text()));
       if (!confirm('Se validó el respaldo. Se descargará una copia de seguridad actual y luego se reemplazarán los datos. ¿Continuar?')) return;
@@ -93,10 +127,10 @@ export function Ajustes() {
       invalidarCatalogo();
       await sincronizarCatalogoPublico(db);
       setMensaje('Respaldo importado correctamente. También se descargó una copia del estado anterior.');
-    } catch (e) { setMensaje(`No se pudo importar: ${e.message}`); } finally { evento.currentTarget.value = ''; }
+    } catch (e) { setMensaje(`No se pudo importar: ${e.message}`); } finally { entrada.value = ''; }
   }
   function descargarCSV(nombre, filas) {
-    const escapar = (valor) => `"${String(valor ?? '').replaceAll('"', '""')}"`;
+    const escapar = (valor) => `"${(typeof valor === 'number' ? String(valor).replace('.', ',') : String(valor ?? '')).replaceAll('"', '""')}"`;
     const contenido = filas.map((fila) => fila.map(escapar).join(';')).join('\r\n');
     const enlace = document.createElement('a'); enlace.href = URL.createObjectURL(new Blob([`\ufeff${contenido}`], { type: 'text/csv;charset=utf-8' })); enlace.download = nombre; enlace.click(); URL.revokeObjectURL(enlace.href);
   }
@@ -108,49 +142,47 @@ export function Ajustes() {
     descargarCSV('combos-candelaria.csv', [['id', 'nombre', 'lineas'], ...combos.map((item) => [item.id, item.nombre, JSON.stringify(item.lineas)])]);
     setMensaje('Se descargaron tres archivos CSV compatibles con Excel.');
   }
-  function parsearCSV(texto) {
-    const filas = []; let fila = []; let celda = ''; let entreComillas = false;
-    for (let indice = 0; indice < texto.length; indice += 1) {
-      const caracter = texto[indice];
-      if (caracter === '"' && texto[indice + 1] === '"' && entreComillas) { celda += '"'; indice += 1; }
-      else if (caracter === '"') entreComillas = !entreComillas;
-      else if (caracter === ';' && !entreComillas) { fila.push(celda); celda = ''; }
-      else if ((caracter === '\n' || caracter === '\r') && !entreComillas) { if (caracter === '\r' && texto[indice + 1] === '\n') indice += 1; fila.push(celda); if (fila.some(Boolean)) filas.push(fila); fila = []; celda = ''; }
-      else celda += caracter;
-    }
-    if (celda || fila.length) { fila.push(celda); filas.push(fila); }
-    const encabezados = filas.shift()?.map((valor) => valor.replace(/^\ufeff/, '')) ?? [];
-    return filas.map((valores) => Object.fromEntries(encabezados.map((encabezado, indice) => [encabezado, valores[indice] ?? ''])));
-  }
   async function importarCSV(evento, tipo) {
-    const archivo = evento.currentTarget.files?.[0]; if (!archivo) return;
+    const entrada = evento.currentTarget; const archivo = entrada.files?.[0]; if (!archivo) return;
+    setOcupadoExcel(true); setRevision(null);
     try {
-      const filas = parsearCSV(await archivo.text()); if (!filas.length) throw new Error('El archivo no contiene filas.');
-      if (!confirm(`Se importarán ${filas.length} registros de ${tipo}. ¿Continuar?`)) return;
       const db = await abrirDB();
-      if (tipo === 'insumos') for (const fila of filas) await guardar(db, TIENDAS.INSUMOS, { id: fila.codigo, codigo: fila.codigo, nombre: fila.nombre, categoria: fila.categoria, unidad: fila.unidad, montoCompra: Number(fila.montoCompra), cantidadCompra: Number(fila.cantidadCompra), activo: true });
-      if (tipo === 'productos') for (const fila of filas) await guardar(db, TIENDAS.PRODUCTOS, { id: fila.codigo, codigo: fila.codigo, nombre: fila.nombre, categoria: fila.categoria, ceraAltoPF: Number(fila.ceraAltoPF), ceraBajoPF: Number(fila.ceraBajoPF), pabilo: Number(fila.pabilo), yeso: Number(fila.yeso), minutosManoObra: Number(fila.minutosManoObra), recipienteCosto: Number(fila.recipienteCosto), recipienteCantidad: Number(fila.recipienteCantidad), heredaCostoDe: null, extras: [], activo: true });
-      if (tipo === 'combos') for (const fila of filas) await guardar(db, TIENDAS.COMBOS, { id: fila.id, nombre: fila.nombre, lineas: JSON.parse(fila.lineas), activo: true });
-      invalidarCatalogo(); await sincronizarCatalogoPublico(db); setMensaje(`Se importaron ${filas.length} registros de ${tipo}.`);
-      await actualizarConteos();
-    } catch (e) { setMensaje(`No se pudo importar ${tipo}: ${e.message}`); } finally { evento.currentTarget.value = ''; }
+      const resultado = prepararRevisionCSV(await archivo.text(), tipo, await exportarRespaldo(db));
+      setRevision({ ...resultado, archivo: archivo.name });
+      setMensaje('CSV revisado. Todavía no se modificó ningún dato.');
+    } catch (e) { setMensaje(`No se pudo revisar ${tipo}: ${e.message}`); } finally { entrada.value = ''; setOcupadoExcel(false); }
   }
   async function revisarExcel(evento) {
-    const archivo = evento.currentTarget.files?.[0]; if (!archivo) return;
+    const entrada = evento.currentTarget; const archivo = entrada.files?.[0]; if (!archivo) return;
+    setOcupadoExcel(true); setRevision(null);
     try {
-      const libro = await leerXlsx(archivo);
-      const pendientes = [];
-      for (const hoja of libro.hojas) hoja.filas.forEach((fila, indice) => { if (fila[0] && !fila[1]) pendientes.push(`${hoja.nombre}, fila ${indice + 1}: código ${fila[0]} sin nombre`); });
-      setRevision({ nombre: archivo.name, hojas: libro.hojas.map((hoja) => ({ nombre: hoja.nombre, filas: Math.max(hoja.filas.length - 1, 0) })), pendientes });
-      setMensaje('Planilla leída. La aplicación todavía no modificó ningún dato.');
-    } catch (e) { setMensaje(`No se pudo leer la planilla: ${e.message}`); } finally { evento.currentTarget.value = ''; }
+      setRevision(await revisarArchivoExcel(await abrirDB(), archivo));
+      setMensaje('Planilla revisada. La aplicación todavía no modificó ningún dato.');
+    } catch (e) { setMensaje(`No se pudo leer la planilla: ${e.message}`); } finally { entrada.value = ''; setOcupadoExcel(false); }
   }
   if (!parametros) return <p class="texto-cuerpo-s">Cargando ajustes…</p>;
   return <section class="ajustes-pantalla">
     <section class="ajustes-seccion"><h2 class="texto-seccion">Parámetros de cálculo</h2><div class="ajustes-campos">{CAMPOS.map(([id, etiqueta, paso]) => <label class="campo-entrada" key={id}><span>{etiqueta}</span><input type="number" step={paso} value={parametros[id]} onInput={(e) => setParametros({ ...parametros, [id]: Number(e.currentTarget.value) })} /></label>)}</div><p class="texto-cuerpo-s">Cambiar estos valores recalcula el catálogo, pero no modifica los pedidos ya tomados.</p><button type="button" class="boton-primario" onClick={guardarCambios}>Guardar parámetros</button></section>
     <section class="ajustes-seccion"><h2 class="texto-seccion">Mensajes</h2>{['confirmacion', 'pago', 'pago_anulado', 'recordatorio', 'entrega', 'entrega_corregida'].map((id) => <button type="button" class="fila-ajuste" key={id} onClick={() => navegarA(`plantilla/${id}`)}><span>{id.replaceAll('_', ' ').replace(/^./, (letra) => letra.toUpperCase())}</span><span>›</span></button>)}</section>
     {mensaje && <p class="aviso aviso--info">{mensaje}</p>}
-    {revision && <section class="tarjeta importacion-revision"><h2 class="texto-seccion">Revisar importación</h2><span class="texto-cuerpo-s">{revision.nombre}</span><ul class="importacion-hojas">{revision.hojas.map((hoja) => <li key={hoja.nombre}><span>{hoja.nombre}</span><strong>{hoja.filas} filas</strong></li>)}</ul>{revision.pendientes.length > 0 ? <><h3 class="texto-seccion">Casos para consultar</h3><ul class="importacion-pendientes">{revision.pendientes.map((pendiente) => <li key={pendiente}>{pendiente}</li>)}</ul></> : <p class="texto-cuerpo-s">No se detectaron casos estructurales pendientes. La aplicación todavía no aplicó la planilla.</p>}</section>}
-    <section class="ajustes-seccion"><h2 class="texto-seccion">Datos</h2>{conteos && <div class="tarjeta"><h3 class="texto-seccion">Catálogo actual</h3><p class="texto-cuerpo-s">Insumos: {conteos.insumos} · Productos: {conteos.productos} · Combos: {conteos.combos}</p><button type="button" class="boton-secundario" onClick={() => actualizarConteos().catch((e) => setMensaje(`No se pudo consultar el catálogo: ${e.message}`))}>Actualizar conteos</button></div>}<button type="button" class="fila-ajuste" onClick={exportar}><span>Respaldo</span><span>Descargar JSON</span></button><label class="fila-ajuste"><span>Importar respaldo JSON</span><input type="file" accept="application/json,.json" onChange={importar} /></label><button type="button" class="fila-ajuste" onClick={exportarCSV}><span>Exportar para Excel</span><span>CSV</span></button><label class="fila-ajuste"><span>Revisar planilla Excel</span><input type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" onChange={revisarExcel} /></label><label class="fila-ajuste"><span>Importar insumos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'insumos')} /></label><label class="fila-ajuste"><span>Importar productos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'productos')} /></label><label class="fila-ajuste"><span>Importar combos CSV</span><input type="file" accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'combos')} /></label>{supabaseConfigurado && <><button type="button" class="fila-ajuste" disabled={migrandoFotos} onClick={revisarFotos}><span>Fotos del catálogo</span><span>Revisar migración</span></button>{revisionFotos && <div class="tarjeta importacion-revision"><h3 class="texto-seccion">Estado de las fotos</h3><p class="texto-cuerpo-s">Fotos pendientes en Base64: {revisionFotos.fotosBase64} · Fotos con URL: {revisionFotos.fotosConUrl} · Productos o combos pendientes: {revisionFotos.registrosPendientes}</p>{progresoFotos && migrandoFotos && <p class="texto-cuerpo-s">Migrando registro {progresoFotos.migrados} de {progresoFotos.total} · {progresoFotos.fotosMigradas} fotos completadas</p>}{revisionFotos.fotosBase64 > 0 && <button type="button" class="boton-secundario" disabled={migrandoFotos} onClick={migrarFotos}>{migrandoFotos ? 'Migrando fotos…' : 'Migrar fotos a Storage'}</button>}</div>}<button type="button" class="boton-secundario" onClick={cerrarSesion}>Cerrar sesión</button></>}</section>
+    {revision && <RevisionExcel revision={revision} ocupado={ocupadoExcel} aplicar={aplicarExcel} cancelar={() => setRevision(null)} />}
+    <section class="ajustes-seccion">
+      <h2 class="texto-seccion">Datos</h2>
+      {conteos && <div class="tarjeta"><h3 class="texto-seccion">Catálogo actual</h3><p class="texto-cuerpo-s">Insumos: {conteos.insumos} · Productos: {conteos.productos} · Combos: {conteos.combos}</p><button type="button" class="boton-secundario" onClick={() => actualizarConteos().catch((e) => setMensaje(`No se pudo consultar el catálogo: ${e.message}`))}>Actualizar conteos</button></div>}
+      <button type="button" class="fila-ajuste" onClick={exportar}><span>Respaldo</span><span>Descargar JSON</span></button>
+      <label class="fila-ajuste"><span>Importar respaldo JSON</span><input type="file" disabled={ocupadoExcel} accept="application/json,.json" onChange={importar} /></label>
+      <button type="button" class="fila-ajuste" disabled={ocupadoExcel} onClick={exportarXLSX}><span>Exportar para Excel</span><span>{ocupadoExcel ? 'Procesando…' : 'XLSX'}</span></button>
+      <label class="fila-ajuste"><span>Revisar e importar Excel (máx. 20 MB)</span><input type="file" disabled={ocupadoExcel} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" onChange={revisarExcel} /></label>
+      <p class="texto-cuerpo-s">Exportá primero el catálogo vigente. Al importar se muestran los cambios antes de pedir confirmación; los pedidos y las fotos se conservan.</p>
+      <button type="button" class="fila-ajuste" disabled={ocupadoExcel} onClick={exportarCSV}><span>Exportar CSV (compatibilidad)</span><span>CSV</span></button>
+      <label class="fila-ajuste"><span>Revisar insumos CSV</span><input type="file" disabled={ocupadoExcel} accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'insumos')} /></label>
+      <label class="fila-ajuste"><span>Revisar productos CSV</span><input type="file" disabled={ocupadoExcel} accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'productos')} /></label>
+      <label class="fila-ajuste"><span>Revisar combos CSV</span><input type="file" disabled={ocupadoExcel} accept="text/csv,.csv" onChange={(e) => importarCSV(e, 'combos')} /></label>
+      {supabaseConfigurado && <>
+        <button type="button" class="fila-ajuste" disabled={migrandoFotos || ocupadoExcel} onClick={revisarFotos}><span>Fotos del catálogo</span><span>Revisar migración</span></button>
+        {revisionFotos && <div class="tarjeta importacion-revision"><h3 class="texto-seccion">Estado de las fotos</h3><p class="texto-cuerpo-s">Fotos pendientes en Base64: {revisionFotos.fotosBase64} · Fotos con URL: {revisionFotos.fotosConUrl} · Productos o combos pendientes: {revisionFotos.registrosPendientes}</p>{progresoFotos && migrandoFotos && <p class="texto-cuerpo-s">Migrando registro {progresoFotos.migrados} de {progresoFotos.total} · {progresoFotos.fotosMigradas} fotos completadas</p>}{revisionFotos.fotosBase64 > 0 && <button type="button" class="boton-secundario" disabled={migrandoFotos || ocupadoExcel} onClick={migrarFotos}>{migrandoFotos ? 'Migrando fotos…' : 'Migrar fotos a Storage'}</button>}</div>}
+        <button type="button" class="boton-secundario" onClick={cerrarSesion}>Cerrar sesión</button>
+      </>}
+    </section>
   </section>;
 }

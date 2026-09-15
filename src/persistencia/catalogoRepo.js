@@ -42,13 +42,9 @@ function resolverInsumosFijos(insumos) {
   return resueltos;
 }
 
-async function construirCatalogo(db, parametros) {
-  const [insumos, productos, combos] = await Promise.all([
-    obtenerTodos(db, TIENDAS.INSUMOS),
-    obtenerTodos(db, TIENDAS.PRODUCTOS),
-    obtenerTodos(db, TIENDAS.COMBOS),
-  ]);
-
+// Cálculo puro reutilizado por la exportación y la simulación de importaciones.
+// Incluye registros inactivos; el catálogo de venta los filtra después.
+export function calcularCatalogoDesdeDatos({ insumos, productos, combos }, parametros) {
   const costosInsumosFijos = resolverInsumosFijos(insumos);
   const costosInsumosPorId = new Map(
     insumos.map((i) => [i.id, calcularCostoUnitario(i.montoCompra, i.cantidadCompra)])
@@ -95,9 +91,19 @@ async function construirCatalogo(db, parametros) {
   });
 
   return {
-    productos: productosConDerivados.filter((p) => p.activo),
-    combos: combosConDerivados.filter((c) => c.activo),
+    productos: productosConDerivados,
+    combos: combosConDerivados,
   };
+}
+
+async function construirCatalogo(db, parametros) {
+  const [insumos, productos, combos] = await Promise.all([
+    obtenerTodos(db, TIENDAS.INSUMOS),
+    obtenerTodos(db, TIENDAS.PRODUCTOS),
+    obtenerTodos(db, TIENDAS.COMBOS),
+  ]);
+  const catalogo = calcularCatalogoDesdeDatos({ insumos, productos, combos }, parametros);
+  return { productos: catalogo.productos.filter((p) => p.activo), combos: catalogo.combos.filter((c) => c.activo) };
 }
 
 let cache = null; // { parametrosJSON, promesa }

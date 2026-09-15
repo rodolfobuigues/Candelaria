@@ -11,6 +11,13 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   base: '/Candelaria/',
+  plugins: [{
+    name: 'candelaria-recursos-pwa',
+    generateBundle(_opciones, bundle) {
+      const recursos = Object.keys(bundle).filter((ruta) => /\.(js|css|woff2)$/.test(ruta));
+      this.emitFile({ type: 'asset', fileName: 'recursos-pwa.json', source: JSON.stringify(recursos) });
+    },
+  }],
   esbuild: {
     jsx: 'transform',
     jsxFactory: 'h',
