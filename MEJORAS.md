@@ -4,6 +4,23 @@ Estado de este corte: implementación verificada, migraciones instaladas en Supa
 
 Las fuentes funcionales y visuales son [ESPECIFICACION.md](ESPECIFICACION.md) y [DISENO.md](DISENO.md). El diagnóstico que originó el trabajo está en `D:/Maira/App Velas/revision-2026-10-19/INFORME.md`. Ambas carpetas corresponden al mismo producto; `App Velas` conserva las fuentes del negocio.
 
+## Relevo documental para agentes — 19/10/2026
+
+El dueño pidió documentación para continuidad e incluyó operación y desarrollo.
+La entrada común es [AGENTS.md](AGENTS.md); el índice [README.md](README.md)
+lleva a [arquitectura](docs/ARQUITECTURA.md), [desarrollo](docs/DESARROLLO.md),
+[operación](docs/OPERACION.md) y [continuidad](docs/CONTINUIDAD.md).
+La otra carpeta incluye su propia entrada AGENTS apuntando a estas fuentes.
+
+Se alinearon CLAUDE y sus ayudas, se marcaron las guías iniciales como históricas
+y se documentó el orden de las actualizaciones SQL sin volver a ejecutarlas.
+Las diferencias entre requisitos y controles actuales quedan visibles en
+CONTINUIDAD: no se prometen funciones ausentes ni se cambian datos para resolverlas.
+La tarea modifica Markdown; conserva código, fixtures, archivos de negocio y base remota.
+Se revisaron 22 documentos, 79 enlaces locales y 12 rutas técnicas sin errores.
+Las comprobaciones de esta tarea son documentales; no se atribuyen nuevas
+ejecuciones de tests o build al cambio de guías.
+
 ## Buscador de componentes — ampliación del 19/10/2026
 
 El usuario confirmó agregar cada componente con cantidad 1 y editarla después.

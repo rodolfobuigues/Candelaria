@@ -1,5 +1,15 @@
 # Candelaria — Paso a paso para construir la app
 
+> Documento histórico de construcción inicial. **No usar como instalación ni
+> como instrucciones de continuidad del proyecto publicado.** Sus referencias
+> a Node 18, `C:\candelaria`, app sin backend, fases pendientes y siembra inicial
+> describen otra etapa. No ejecutar `git init`, recrear CLAUDE ni importar datos
+> sobre la instalación actual a partir de estos bloques.
+>
+> Entrada vigente: [AGENTS.md](AGENTS.md), [README.md](README.md),
+> [desarrollo](docs/DESARROLLO.md) y [continuidad](docs/CONTINUIDAD.md).
+> Se conserva el texto original como trazabilidad, no como estado actual.
+
 Guía operativa. Los bloques en gris se copian y se pegan tal cual en Claude Code.
 
 ---

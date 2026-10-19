@@ -2,8 +2,8 @@
 
 **Actualizado: 19/10/2026**
 
-Documento vivo. Se actualiza al cerrar cada fase. Es lo primero que hay que leer
-al abrir un chat nuevo.
+Documento vivo. Se actualiza al cerrar una tarea relevante. Al abrir un chat nuevo
+empezar por [AGENTS.md](AGENTS.md) y [README.md](README.md), después este estado.
 
 ---
 
@@ -16,8 +16,29 @@ al abrir un chat nuevo.
 | Publicación | `https://rodolfobuigues.github.io/Candelaria/`; buscador de componentes `c5320a4` publicado y verificado el 19/10/2026 |
 | Tests | `npm run test:detalle`: 289 pruebas aprobadas, 27 suites, 0 fallos el 19/10/2026 |
 | Compilación | Build correcto: Vite 8.1.6, 105 módulos; `verificar:build` aprobado el 19/10/2026 |
-| Estado actual | Mejoras publicadas; migraciones instaladas y permisos comprobados en Supabase. Catálogo real de 36 combos verificado |
-| Próximo paso | Completar fotos, revisión editorial y verificación Android. WhatsApp pendiente del número comercial. Ver `MEJORAS.md` |
+| Estado actual | Aplicación publicada y relevo documental preparado. El conteo remoto de 36 combos es una captura de la revisión, no un límite actual |
+| Próximo paso | Fotos, revisión editorial, Android y decisiones sobre discrepancias. WhatsApp pendiente. Ver `docs/CONTINUIDAD.md` |
+
+### Relevo para agentes y operación — 19/10/2026
+
+Entradas AGENTS en ambas carpetas. README enlaza guías canónicas de arquitectura,
+desarrollo, operación y continuidad. CLAUDE y sus ayudas siguen esa misma entrada;
+PASO_A_PASO y los documentos reutilizables quedan identificados como historia.
+No cambió código de la app, datos remotos, planilla original ni DOCX.
+
+La guía técnica distingue localhost de producción, instalación nueva de SQL ya
+aplicado, y JSON completo de intercambio Excel. La guía operativa describe los
+controles realmente disponibles. CONTINUIDAD registra decisiones del dueño y
+diferencias funcionales verificadas por lectura, sin modificar sus reglas de negocio.
+
+La tarea documental verifica enlaces, rutas, coherencia y diff. Los resultados
+de 289 tests y build de 105 módulos pertenecen al código publicado `c5320a4`;
+no son ejecuciones nuevas realizadas por cambiar Markdown.
+
+Revisión documental: 22 archivos entre ambas carpetas, 79 enlaces locales y
+12 rutas técnicas comprobadas, sin errores; bloques de código cerrados y sin
+credenciales literales detectadas. `git diff --check` aprobado. Los originales
+Excel/DOCX, fixtures y fuentes de la app no formaron parte de los cambios.
 
 ### Buscador directo de componentes — 19/10/2026
 
