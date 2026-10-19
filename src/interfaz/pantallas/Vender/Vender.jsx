@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { abrirDB, obtenerTodos } from '../../../persistencia/db.js';
 import { TIENDAS } from '../../../persistencia/esquema.js';
 import { obtenerCatalogo } from '../../../persistencia/catalogoRepo.js';
-import { guardarPedido, listarPedidos } from '../../../persistencia/pedidosRepo.js';
+import { crearPedidoNumerado } from '../../../persistencia/pedidosRepo.js';
 import { crearPedido } from '../../../persistencia/pedidoLogica.js';
 import { obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
 import { formatearImporte } from '../../../config/formato.js';
 import { redondearPrecioVenta } from '../../../config/precios.js';
 import { navegarA } from '../../enrutador.js';
 import { VisorFotos } from '../../comun/GaleriaFotos.jsx';
+
+import { leerBorrador, guardarBorrador, claveBorrador, CADUCIDAD_BORRADOR } from '../../borradorVenta.js';
 
 const FILTROS = [
   { id: 'TODOS', etiqueta: 'Todos' },
@@ -87,17 +89,17 @@ function Articulo({ articulo, agregar }) {
   );
 }
 
-function SelectorCantidad({ cantidad, cambiar }) {
+function SelectorCantidad({ cantidad, cambiar, disabled }) {
   return (
     <div class="selector-cantidad" aria-label="Cantidad">
-      <button type="button" aria-label="Disminuir cantidad" onClick={() => cambiar(-1)}>−</button>
+      <button type="button" disabled={disabled} aria-label="Disminuir cantidad" onClick={() => cambiar(-1)}>−</button>
       <span class="cantidad">{cantidad}</span>
-      <button type="button" aria-label="Aumentar cantidad" onClick={() => cambiar(1)}>+</button>
+      <button type="button" disabled={disabled} aria-label="Aumentar cantidad" onClick={() => cambiar(1)}>+</button>
     </div>
   );
 }
 
-function LineaPedido({ linea, cambiarCantidad, cambiarPrecio, quitar }) {
+function LineaPedido({ linea, cambiarCantidad, cambiarPrecio, quitar, guardando }) {
   return (
     <li class="pedido-linea">
       <div class="pedido-linea__encabezado">
@@ -105,14 +107,15 @@ function LineaPedido({ linea, cambiarCantidad, cambiarPrecio, quitar }) {
           <strong class="nombre-truncado">{linea.nombre}</strong>
           <span class="texto-cuerpo-s fila-lista__codigo">{linea.codigo}</span>
         </div>
-        <button type="button" class="boton-texto" onClick={quitar}>Quitar</button>
+        <button type="button" class="boton-texto" disabled={guardando} onClick={quitar}>Quitar</button>
       </div>
       <div class="pedido-linea__controles">
-        <SelectorCantidad cantidad={linea.cantidad} cambiar={(delta) => cambiarCantidad(linea.refId, delta)} />
+        <SelectorCantidad disabled={guardando} cantidad={linea.cantidad} cambiar={(delta) => cambiarCantidad(linea.refId, delta)} />
         <label class="campo-entrada pedido-linea__precio">
           <span>Precio</span>
           <input
             type="number"
+            disabled={guardando}
             min="0"
             step="100"
             value={linea.precioAplicado}
@@ -146,6 +149,7 @@ function FormularioPedido({ lineas, total, cliente, setCliente, guardar, guardan
             <LineaPedido
               key={linea.refId}
               linea={linea}
+              guardando={guardando}
               cambiarCantidad={cliente.cambiarCantidad}
               cambiarPrecio={cliente.cambiarPrecio}
               quitar={() => cliente.quitar(linea.refId)}
@@ -156,35 +160,48 @@ function FormularioPedido({ lineas, total, cliente, setCliente, guardar, guardan
       <div class="vender-datos-cliente">
         <label class="campo-entrada">
           <span>Nombre del cliente *</span>
-          <input value={cliente.nombre} onInput={(e) => setCliente({ ...cliente, nombre: e.currentTarget.value })} />
+          <input disabled={guardando} value={cliente.nombre} onInput={(e) => setCliente({ nombre: cliente.nombre, telefono: cliente.telefono, nota: cliente.nota, nombre: e.currentTarget.value })} />
         </label>
         <label class="campo-entrada">
           <span>Teléfono</span>
-          <input type="tel" value={cliente.telefono} onInput={(e) => setCliente({ ...cliente, telefono: e.currentTarget.value })} />
+          <input disabled={guardando} type="tel" value={cliente.telefono} onInput={(e) => setCliente({ nombre: cliente.nombre, telefono: cliente.telefono, nota: cliente.nota, telefono: e.currentTarget.value })} />
         </label>
         <label class="campo-entrada">
           <span>Nota interna</span>
-          <textarea rows="3" value={cliente.nota} onInput={(e) => setCliente({ ...cliente, nota: e.currentTarget.value })} />
+          <textarea disabled={guardando} rows="3" value={cliente.nota} onInput={(e) => setCliente({ nombre: cliente.nombre, telefono: cliente.telefono, nota: cliente.nota, nota: e.currentTarget.value })} />
         </label>
       </div>
       {error && <p class="aviso">No se pudo guardar el pedido: {error}</p>}
-      <button type="button" class="boton-primario" disabled={!puedeGuardar} onClick={guardar}>Guardar pedido</button>
+      <button type="button" class="boton-primario" disabled={!puedeGuardar} onClick={guardar}>{guardando ? 'Guardando…' : 'Guardar pedido'}</button>
     </section>
   );
 }
 
-export function Vender() {
+export function Vender({ usuarioId = 'local' }) {
+  const [borradorInicial] = useState(() => leerBorrador(globalThis.sessionStorage, usuarioId));
+  const [avisoBorrador, setAvisoBorrador] = useState(borradorInicial ? 'Recuperamos el borrador de esta sesión. Revisá precios y cantidades antes de guardar.' : null);
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState('TODOS');
-  const [lineas, setLineas] = useState([]);
+  const [lineas, setLineas] = useState(borradorInicial?.lineas ?? []);
   const [mostrarPedido, setMostrarPedido] = useState(false);
-  const [cliente, setCliente] = useState({ nombre: '', telefono: '', nota: '' });
+  const [cliente, setCliente] = useState(borradorInicial?.cliente ?? { nombre: '', telefono: '', nota: '' });
   const [guardando, setGuardando] = useState(false);
   const [confirmacion, setConfirmacion] = useState(null);
   const pedidoRef = useRef(null);
 
+  useEffect(() => {
+    try { guardarBorrador(globalThis.sessionStorage, usuarioId, { lineas, cliente }); }
+    catch { setAvisoBorrador('Este navegador no permite guardar el borrador. Conservá esta pantalla abierta hasta guardar el pedido.'); }
+    const caducidad = setTimeout(() => { globalThis.sessionStorage?.removeItem(claveBorrador(usuarioId)); setLineas([]); setCliente({ nombre: '', telefono: '', nota: '' }); setAvisoBorrador('El borrador se eliminó después de 8 horas sin cambios.'); }, CADUCIDAD_BORRADOR);
+    return () => clearTimeout(caducidad);
+  }, [lineas, cliente, usuarioId]);
+  function descartarBorrador() {
+    if (!globalThis.confirm('¿Descartar el pedido sin guardar?')) return;
+    globalThis.sessionStorage?.removeItem(claveBorrador(usuarioId));
+    setLineas([]); setCliente({ nombre: '', telefono: '', nota: '' }); setAvisoBorrador(null); setMostrarPedido(false);
+  }
   useEffect(() => {
     if (!mostrarPedido) return;
     requestAnimationFrame(() => pedidoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -201,12 +218,11 @@ export function Vender() {
       try {
         const db = await abrirDB();
         const parametros = await obtenerParametrosVigentes(db);
-        const [catalogo, pedidos, insumos] = await Promise.all([
+        const [catalogo, insumos] = await Promise.all([
           obtenerCatalogo(db, parametros),
-          listarPedidos(db),
           obtenerTodos(db, TIENDAS.INSUMOS),
         ]);
-        if (activo) setDatos({ articulos: construirArticulos(catalogo, insumos), siguienteNumero: pedidos.length + 1 });
+        if (activo) setDatos({ articulos: construirArticulos(catalogo, insumos) });
       } catch (e) {
         if (activo) setError(e.message);
       }
@@ -228,6 +244,7 @@ export function Vender() {
   const total = redondearPrecioVenta(lineas.reduce((suma, linea) => suma + linea.precioAplicado * linea.cantidad, 0));
 
   function agregar(articulo) {
+    if (guardando) return;
     setConfirmacion(null);
     setLineas((actuales) => {
       const existente = actuales.find((linea) => linea.refId === articulo.id);
@@ -248,26 +265,29 @@ export function Vender() {
   }
 
   function cambiarCantidad(refId, delta) {
+    if (guardando) return;
     setLineas((actuales) => actuales
       .map((linea) => linea.refId === refId ? { ...linea, cantidad: linea.cantidad + delta } : linea)
       .filter((linea) => linea.cantidad > 0));
   }
 
   function cambiarPrecio(refId, valor) {
-    const precio = redondearPrecioVenta(valor);
-    if (precio < 0) return;
-    setLineas((actuales) => actuales.map((linea) => linea.refId === refId ? { ...linea, precioAplicado: precio } : linea));
+    if (guardando) return;
+    try {
+      const precio = redondearPrecioVenta(valor);
+      setLineas((actuales) => actuales.map((linea) => linea.refId === refId ? { ...linea, precioAplicado: precio } : linea)); setError(null);
+    } catch (e) { setError(e.message); }
   }
 
   async function guardar() {
-    if (!datos || lineas.length === 0 || !cliente.nombre.trim()) return;
+    if (guardando || !datos || lineas.length === 0 || !cliente.nombre.trim()) return;
     setGuardando(true);
     setError(null);
     try {
       const fecha = new Date().toISOString();
       const pedido = crearPedido({
         id: idNuevo('pedido'),
-        numero: datos.siguienteNumero,
+        numero: 1, // La persistencia asigna el número definitivo de forma atómica.
         fecha,
         clienteNombre: cliente.nombre.trim(),
         clienteTelefono: cliente.telefono.trim(),
@@ -275,12 +295,13 @@ export function Vender() {
         lineas: lineas.map(({ nombre, codigo, ...linea }) => ({ ...linea, codigoCongelado: codigo })),
       });
       const db = await abrirDB();
-      await guardarPedido(db, pedido);
-      setConfirmacion({ id: pedido.id, numero: pedido.numero, total });
+      const persistido = await crearPedidoNumerado(db, pedido);
+      globalThis.sessionStorage?.removeItem(claveBorrador(usuarioId));
+      setConfirmacion({ id: persistido.id, numero: persistido.numero, total });
       setLineas([]);
       setCliente({ nombre: '', telefono: '', nota: '' });
       setMostrarPedido(false);
-      setDatos({ ...datos, siguienteNumero: datos.siguienteNumero + 1 });
+      setAvisoBorrador(null);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -297,6 +318,8 @@ export function Vender() {
 
   return (
     <section class="vender-pantalla">
+      {avisoBorrador && <p class="aviso aviso--info" role="status">{avisoBorrador}</p>}
+      {(lineas.length > 0 || cliente.nombre || cliente.telefono || cliente.nota) && <div class="vender-borrador"><p class="texto-cuerpo-s">Borrador privado en esta pestaña. Se borra al guardar, cerrar sesión, cerrar la pestaña o tras 8 horas sin cambios.</p><button type="button" class="boton-secundario" disabled={guardando} onClick={descartarBorrador}>Descartar borrador</button></div>}
       <label class="campo-entrada vender-buscador">
         <span>Buscar producto o combo</span>
         <input type="search" value={busqueda} onInput={(e) => setBusqueda(e.currentTarget.value)} placeholder="Nombre o código" />

@@ -2,7 +2,7 @@
 // "Navegación única". Nunca menú hamburguesa. Píldora de pestaña activa con
 // los tokens de DISEÑO.md § 2.
 import { h } from 'preact';
-import { useRuta } from '../enrutador.js';
+import { useRuta, seccionDeRuta, navegarA } from '../enrutador.js';
 
 // Íconos de trazo, 24 px, extremos y esquinas redondeadas (DISEÑO.md § 6).
 // `currentColor` para heredar el color de texto ya resuelto por CSS —
@@ -66,12 +66,12 @@ const PESTANAS = [
 ];
 
 export function BarraInferior() {
-  const rutaActual = useRuta();
+  const rutaActual = seccionDeRuta(useRuta());
 
   return (
-    <nav class="barra-inferior">
+    <nav class="barra-inferior" aria-label="Navegación principal">
       {PESTANAS.map(({ ruta, etiqueta, Icono }) => (
-        <a key={ruta} href={`#/${ruta}`} aria-current={rutaActual === ruta ? 'page' : undefined}>
+        <a key={ruta} href={`#/${ruta}`} onClick={(evento) => { if (!evento.ctrlKey && !evento.metaKey && !evento.shiftKey && !evento.altKey) { evento.preventDefault(); navegarA(ruta); } }} aria-current={rutaActual === ruta ? 'page' : undefined}>
           <span class="pildora">
             <Icono />
           </span>

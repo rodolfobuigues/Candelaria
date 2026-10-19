@@ -3,12 +3,22 @@
 // entra por parámetro; nada se resuelve acá contra un catálogo.
 
 import { redondearPrecioVenta } from '../config/precios.js';
+import { validarParametros } from '../config/validacionParametros.js';
+
+function noNegativo(valor, nombre) {
+  if (typeof valor !== 'number' || !Number.isFinite(valor) || valor < 0) throw new Error(`${nombre} debe ser un número finito no negativo.`);
+  return valor;
+}
 
 export function techoMultiplo(valor, multiplo) {
+  noNegativo(valor, 'El valor a redondear');
+  if (!Number.isInteger(multiplo) || multiplo <= 0) throw new Error('El redondeo debe ser un entero mayor que cero.');
   return Math.ceil(valor / multiplo) * multiplo;
 }
 
 export function calcularCostoUnitario(montoCompra, cantidadCompra) {
+  noNegativo(montoCompra, 'El monto de compra');
+  if (typeof cantidadCompra !== 'number' || !Number.isFinite(cantidadCompra) || cantidadCompra <= 0) throw new Error('La cantidad de compra debe ser mayor que cero.');
   return montoCompra / cantidadCompra;
 }
 
@@ -24,6 +34,7 @@ export function calcularCostoUnitario(montoCompra, cantidadCompra) {
  * parametros: ver src/config/parametros.js
  */
 export function calcularCostoProducto(producto, costosInsumos, parametros) {
+  validarParametros(parametros);
   const {
     ceraAltoPF = 0,
     ceraBajoPF = 0,
@@ -34,6 +45,10 @@ export function calcularCostoProducto(producto, costosInsumos, parametros) {
     recipienteCantidad = 0,
     extras = [],
   } = producto;
+
+  for (const [nombre, valor] of Object.entries({ ceraAltoPF, ceraBajoPF, pabilo, yeso, minutosManoObra, recipienteCostoResuelto, recipienteCantidad })) noNegativo(valor, nombre);
+  for (const [nombre, valor] of Object.entries(costosInsumos)) noNegativo(valor, `Costo de ${nombre}`);
+  for (const extra of extras) { noNegativo(extra.costoUnitario, 'Costo del extra'); noNegativo(extra.cantidad, 'Cantidad del extra'); }
 
   const {
     factorGastos,
@@ -114,6 +129,8 @@ export function calcularCostoProducto(producto, costosInsumos, parametros) {
  */
 export function calcularCostoCombo(lineas, parametros) {
   const { beneficio } = parametros;
+  noNegativo(beneficio, 'El beneficio');
+  for (const linea of lineas) { noNegativo(linea.costoUnit, 'Costo del componente'); noNegativo(linea.cantidad, 'Cantidad del componente'); }
 
   const costoCombo = lineas.reduce(
     (acumulado, linea) => acumulado + linea.costoUnit * linea.cantidad,
@@ -126,8 +143,8 @@ export function calcularCostoCombo(lineas, parametros) {
 
 export function calcularIndicadores({ precio, subtotal, materiales, manoObra }) {
   return {
-    margenSobreCosto: precio / subtotal - 1,
-    pesoManoObra: manoObra / subtotal,
+    margenSobreCosto: subtotal > 0 ? precio / subtotal - 1 : null,
+    pesoManoObra: subtotal > 0 ? manoObra / subtotal : null,
     // No descuenta la mano de obra: es intencional (ESPECIFICACION.md § 4.3).
     beneficioBruto: precio - materiales,
     beneficioNeto: precio - subtotal,

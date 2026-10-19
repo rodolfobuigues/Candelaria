@@ -50,9 +50,9 @@ begin
   end loop;
 
   for fila in select value from jsonb_array_elements(p_cambios -> 'insumos') loop
-    insert into public.insumos (id, codigo, nombre, categoria, unidad, monto_compra, cantidad_compra, activo)
-    values (fila ->> 'id', fila ->> 'codigo', fila ->> 'nombre', fila ->> 'categoria', fila ->> 'unidad', (fila ->> 'monto_compra')::numeric, (fila ->> 'cantidad_compra')::numeric, (fila ->> 'activo')::boolean)
-    on conflict (id) do update set codigo = excluded.codigo, nombre = excluded.nombre, categoria = excluded.categoria, unidad = excluded.unidad, monto_compra = excluded.monto_compra, cantidad_compra = excluded.cantidad_compra, activo = excluded.activo, updated_at = now();
+    insert into public.insumos (id, codigo, nombre, categoria, unidad, monto_compra, cantidad_compra, activo, rol_motor)
+    values (fila ->> 'id', fila ->> 'codigo', fila ->> 'nombre', fila ->> 'categoria', fila ->> 'unidad', (fila ->> 'monto_compra')::numeric, (fila ->> 'cantidad_compra')::numeric, (fila ->> 'activo')::boolean, nullif(fila ->> 'rol_motor',''))
+    on conflict (id) do update set codigo = excluded.codigo, nombre = excluded.nombre, categoria = excluded.categoria, unidad = excluded.unidad, monto_compra = excluded.monto_compra, cantidad_compra = excluded.cantidad_compra, activo = excluded.activo, rol_motor = excluded.rol_motor, updated_at = now();
   end loop;
   for fila in select value from jsonb_array_elements(p_cambios -> 'productos') loop
     insert into public.productos (id, codigo, nombre, categoria, cera_alto_pf, cera_bajo_pf, pabilo, yeso, minutos_mano_obra, recipiente_costo, recipiente_cantidad, hereda_costo_de, extras, fotos, activo)
@@ -60,9 +60,9 @@ begin
     on conflict (id) do update set codigo = excluded.codigo, nombre = excluded.nombre, categoria = excluded.categoria, cera_alto_pf = excluded.cera_alto_pf, cera_bajo_pf = excluded.cera_bajo_pf, pabilo = excluded.pabilo, yeso = excluded.yeso, minutos_mano_obra = excluded.minutos_mano_obra, recipiente_costo = excluded.recipiente_costo, recipiente_cantidad = excluded.recipiente_cantidad, hereda_costo_de = excluded.hereda_costo_de, extras = excluded.extras, fotos = excluded.fotos, activo = excluded.activo, updated_at = now();
   end loop;
   for fila in select value from jsonb_array_elements(p_cambios -> 'combos') loop
-    insert into public.combos (id, nombre, lineas, fotos, activo)
-    values (fila ->> 'id', fila ->> 'nombre', fila -> 'lineas', fila -> 'fotos', (fila ->> 'activo')::boolean)
-    on conflict (id) do update set nombre = excluded.nombre, lineas = excluded.lineas, fotos = excluded.fotos, activo = excluded.activo, updated_at = now();
+    insert into public.combos (id, nombre, lineas, fotos, activo, nombre_comercial, descripcion_comercial)
+    values (fila ->> 'id', fila ->> 'nombre', fila -> 'lineas', fila -> 'fotos', (fila ->> 'activo')::boolean, coalesce(fila ->> 'nombre_comercial',''), coalesce(fila ->> 'descripcion_comercial',''))
+    on conflict (id) do update set nombre = excluded.nombre, lineas = excluded.lineas, fotos = excluded.fotos, activo = excluded.activo, nombre_comercial = excluded.nombre_comercial, descripcion_comercial = excluded.descripcion_comercial, updated_at = now();
   end loop;
   for fila in select value from jsonb_array_elements(p_cambios -> 'parametros') loop
     if fila ->> 'id' <> 'actuales' then raise exception 'Solo se pueden importar parámetros de cálculo.'; end if;

@@ -15,11 +15,18 @@ manda la especificación).
   no pedido en cualquiera de las dos se replica en todo lo que se construya
   después.
 
+## Actualización autorizada del 19/10/2026
+
+El dueño autorizó aplicar el informe de revisión. Dirección elegida: Continuidad
+terracota. `MEJORAS.md` registra evidencia y pendientes. Fotografías adicionales
+a cargo del dueño; WhatsApp comercial vacío hasta que lo configure explícitamente.
+
 ## Stack y restricciones duras
 
-- **PWA instalable, offline-first. Sin backend, sin servicios pagos, sin
-  nube, sin cuentas de usuario.**
-- Persistencia local en **IndexedDB**. Todo el motor de cálculo vive en
+- **PWA instalable con Supabase como fuente vigente.** Un creador autorizado
+  administra; el público consulta sólo la proyección comercial. Escribir requiere
+  conexión; no se promete sincronización offline.
+- **IndexedDB** se usa en desarrollo local sin Supabase. Todo el motor vive en
   funciones puras, en un módulo sin dependencias de la interfaz ni de la
   base de datos (testeable contra las fixtures).
 - **Interfaz: Preact con JSX sobre Vite. JavaScript, sin TypeScript.**
@@ -27,10 +34,12 @@ manda la especificación).
   ni History API. Sin librería de estado: `Context` para parámetros globales
   y catálogo, `useState` para el resto. Ninguna dependencia nueva sin
   autorización explícita del dueño.
-- **Host: GitHub Pages**, repositorio `candelaria`, `base: '/candelaria/'`
+- **Host: GitHub Pages**, repositorio `Candelaria`, `base: '/Candelaria/'`
   en Vite. IndexedDB se aísla por origen: cambiar de host pierde los datos
   salvo respaldo JSON (ver ESPECIFICACION.md § 2).
-- Único respaldo real: exportación/importación de un archivo JSON completo.
+- Respaldo: JSON validado con plantillas centrales y copias de fotos externas.
+  Una copia de emergencia sin medios se identifica expresamente. La restauración
+  usa una transacción; Storage se prepara antes, sin borrar imágenes previas.
   Excel es un mecanismo aparte, no intercambiable con el JSON (ver
   ESPECIFICACION.md § 5.6).
 - Excel: **ExcelJS empaquetado en la app**, nunca desde CDN. Se descarta
@@ -113,6 +122,12 @@ puntos que le corresponden siga en rojo o sin verificar.
   globales; los precios de línea quedan congelados (`precioOriginal`).
 - La nota interna del pedido nunca sale en un mensaje al cliente; no existe
   marcador `{nota}`.
+- Las altas rechazan códigos repetidos. Los pedidos se numeran dentro de una
+  transacción y se actualizan comparando su revisión.
+- Los roles de insumos son estables y no dependen de nombres editables. Las
+  fixtures sólo se cargan con DEV activo en una base local vacía.
+- El catálogo público no incluye cantidades de insumos ni mano de obra. Usa
+  campos comerciales separados y fotos reales o un estado explícito de ausencia.
 - Toda superficie interactiva mide al menos 48 × 48 px.
 - La pantalla de Vender y la ficha de Pedido son **la misma pantalla con dos
   estados**: sin guardar solo muestra "Guardar"; una vez guardado aparecen

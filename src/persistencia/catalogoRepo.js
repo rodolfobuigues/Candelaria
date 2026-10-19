@@ -6,6 +6,7 @@
 // esas tiendas tiene que llamar invalidarCatalogo() a mano.
 import { TIENDAS } from './esquema.js';
 import { obtenerTodos } from './db.js';
+import { ROLES_INSUMOS_FIJOS, normalizarNombreInsumo } from '../config/insumosFijos.js';
 import {
   calcularCostoUnitario,
   calcularCostoProducto,
@@ -13,30 +14,28 @@ import {
   resolverRecipienteCosto,
 } from '../motor/calculo.js';
 
-// Los siete insumos fijos de la receta no se referencian por id desde el
-// producto (ESPECIFICACION.md § 3.2): se resuelven por nombre, igual que la
-// planilla original con VLOOKUP (§ 7 regla 7). "Escencia" es la grafía vieja
-// de la planilla; se reconocen las dos.
-const NOMBRES_INSUMOS_FIJOS = {
-  ceraAltoPF: ['cera alto pf'],
-  ceraBajoPF: ['cera bajo pf'],
-  pabilo: ['pabilo'],
-  yeso: ['yeso'],
-  esencia: ['esencia', 'escencia'],
-  colorante: ['colorante'],
-  aceiteCoco: ['aceite de coco'],
-};
-
-function resolverInsumosFijos(insumos) {
-  const porNombre = new Map(insumos.map((i) => [i.nombre.trim().toLowerCase(), i]));
+// El rol persistido es independiente del nombre editable. Las referencias
+// antiguas se reconocen sin reescribir la base al leer; al editarlas la UI
+// conserva su rol antes de cambiar el texto.
+export function resolverInsumosFijos(insumos, parametros = {}, requeridos = null) {
+  const porId = new Map(insumos.map((insumo) => [String(insumo.id), insumo]));
   const resueltos = {};
-  for (const [clave, candidatos] of Object.entries(NOMBRES_INSUMOS_FIJOS)) {
-    const insumo = candidatos.map((c) => porNombre.get(c)).find(Boolean);
+  const usados = new Set();
+  for (const { id: clave, nombres, codigo } of ROLES_INSUMOS_FIJOS) {
+    if (requeridos && !requeridos.has(clave)) { resueltos[clave] = 0; continue; }
+    const asignados = insumos.filter((insumo) => insumo.rolMotor === clave);
+    if (asignados.length > 1) throw new Error(`Hay más de un insumo con el rol ${clave}. Corregilo en Productos → Insumos.`);
+    const configurado = parametros.insumosFijos?.[clave];
+    const insumo = asignados[0] ?? (configurado ? porId.get(String(configurado)) : null)
+      ?? insumos.find((item) => !item.rolMotor && nombres.includes(normalizarNombreInsumo(item.nombre)))
+      ?? insumos.find((item) => !item.rolMotor && String(item.codigo ?? item.id).toUpperCase() === codigo && !usados.has(item.id));
     if (!insumo) {
       throw new Error(
-        `No se encontró el insumo fijo "${clave}" (buscado como: ${candidatos.join(' / ')})`
+        `No se encontró el insumo fijo "${clave}". Asigná su rol en Productos → Insumos.`
       );
     }
+    if (usados.has(insumo.id)) throw new Error(`El insumo ${insumo.codigo ?? insumo.id} está asignado a más de un rol del motor.`);
+    usados.add(insumo.id);
     resueltos[clave] = calcularCostoUnitario(insumo.montoCompra, insumo.cantidadCompra);
   }
   return resueltos;
@@ -45,7 +44,20 @@ function resolverInsumosFijos(insumos) {
 // Cálculo puro reutilizado por la exportación y la simulación de importaciones.
 // Incluye registros inactivos; el catálogo de venta los filtra después.
 export function calcularCatalogoDesdeDatos({ insumos, productos, combos }, parametros) {
-  const costosInsumosFijos = resolverInsumosFijos(insumos);
+  if (!insumos.length && !productos.length && !combos.length) return { productos: [], combos: [] };
+  const requeridos = new Set();
+  for (const producto of productos) {
+    if (producto.ceraAltoPF > 0) requeridos.add('ceraAltoPF');
+    if (producto.ceraBajoPF > 0) requeridos.add('ceraBajoPF');
+    if (producto.pabilo > 0) requeridos.add('pabilo');
+    if (producto.yeso > 0) requeridos.add('yeso');
+    if ((producto.ceraAltoPF ?? 0) + (producto.ceraBajoPF ?? 0) > 0) {
+      if (parametros.porcentajeEsencia > 0) requeridos.add('esencia');
+      if (parametros.mlColorantePorGramoCera > 0) requeridos.add('colorante');
+      if (parametros.unidadesCocoPorGramoCera > 0) requeridos.add('aceiteCoco');
+    }
+  }
+  const costosInsumosFijos = resolverInsumosFijos(insumos, parametros, requeridos);
   const costosInsumosPorId = new Map(
     insumos.map((i) => [i.id, calcularCostoUnitario(i.montoCompra, i.cantidadCompra)])
   );
@@ -53,10 +65,10 @@ export function calcularCatalogoDesdeDatos({ insumos, productos, combos }, param
 
   const productosConDerivados = productos.map((producto) => {
     const recipienteCostoResuelto = resolverRecipienteCosto(producto, productosPorId);
-    const extras = (producto.extras ?? []).map((extra) => ({
-      costoUnitario: costosInsumosPorId.get(extra.insumoId) ?? 0,
-      cantidad: extra.cantidad,
-    }));
+    const extras = (producto.extras ?? []).map((extra) => {
+      if (!costosInsumosPorId.has(extra.insumoId)) throw new Error(`El producto ${producto.codigo} tiene un extra inexistente: ${extra.insumoId}.`);
+      return { costoUnitario: costosInsumosPorId.get(extra.insumoId), cantidad: extra.cantidad };
+    });
 
     const derivado = calcularCostoProducto(
       { ...producto, recipienteCostoResuelto, extras },
@@ -85,7 +97,7 @@ export function calcularCatalogoDesdeDatos({ insumos, productos, combos }, param
   }
 
   const combosConDerivados = combos.map((combo) => {
-    const lineas = combo.lineas.map((linea) => ({ ...linea, costoUnit: costoUnitLinea(linea) }));
+    const lineas = (combo.lineas ?? []).map((linea) => ({ ...linea, costoUnit: costoUnitLinea(linea) }));
     const { costoCombo, precioCombo } = calcularCostoCombo(lineas, parametros);
     return { ...combo, lineas, costoCombo, precioCombo };
   });
@@ -114,8 +126,10 @@ export function invalidarCatalogo() {
 
 export function obtenerCatalogo(db, parametros) {
   const parametrosJSON = JSON.stringify(parametros);
-  if (!cache || cache.parametrosJSON !== parametrosJSON) {
-    cache = { parametrosJSON, promesa: construirCatalogo(db, parametros) };
+  if (!cache || cache.db !== db || cache.parametrosJSON !== parametrosJSON) {
+    const promesa = construirCatalogo(db, parametros);
+    cache = { db, parametrosJSON, promesa };
+    promesa.catch(() => { if (cache?.promesa === promesa) cache = null; });
   }
   return cache.promesa;
 }

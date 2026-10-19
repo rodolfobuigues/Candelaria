@@ -4,7 +4,7 @@ import { firmaEstadoExcel } from './excelContrato.js';
 import { aplicarCambiosExcelAtomicos } from './db.js';
 
 export async function exportarExcel(db) {
-  const estado = await exportarRespaldo(db);
+  const estado = await exportarRespaldo(db, { incluirMedios: false });
   const { escribirExcel } = await import('./excelLibro.js');
   return escribirExcel(estado, { fuente: db?.tipo === 'supabase' ? 'Supabase' : 'Base local' });
 }
@@ -12,7 +12,7 @@ export async function exportarExcel(db) {
 export async function revisarExcel(db, archivo) {
   const { leerExcelIntercambio } = await import('./excelLibro.js');
   const libro = await leerExcelIntercambio(archivo);
-  const estado = await exportarRespaldo(db);
+  const estado = await exportarRespaldo(db, { incluirMedios: false });
   return { ...prepararRevisionExcel(libro, estado), archivo: archivo.name };
 }
 

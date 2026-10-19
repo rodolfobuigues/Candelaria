@@ -1,6 +1,6 @@
 // Esquema de IndexedDB — ESPECIFICACION.md § 3.
 export const NOMBRE_DB = 'candelaria';
-export const VERSION_DB = 1;
+export const VERSION_DB = 2;
 
 export const TIENDAS = {
   INSUMOS: 'insumos',
@@ -10,7 +10,7 @@ export const TIENDAS = {
   PEDIDOS: 'pedidos',
 };
 
-export function migrar(db) {
+export function migrar(db, transaccion) {
   if (!db.objectStoreNames.contains(TIENDAS.INSUMOS)) {
     const tienda = db.createObjectStore(TIENDAS.INSUMOS, { keyPath: 'id' });
     tienda.createIndex('codigo', 'codigo', { unique: true });
@@ -33,4 +33,6 @@ export function migrar(db) {
     const tienda = db.createObjectStore(TIENDAS.PEDIDOS, { keyPath: 'id' });
     tienda.createIndex('numero', 'numero', { unique: true });
   }
+  const insumos = transaccion?.objectStore(TIENDAS.INSUMOS);
+  if (insumos && !insumos.indexNames.contains('rolMotor')) insumos.createIndex('rolMotor', 'rolMotor', { unique: true });
 }

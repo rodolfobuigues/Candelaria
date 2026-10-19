@@ -9,6 +9,29 @@ Formato numérico: separador de miles `.`, decimal `,`.**
 *Actualizado: 14/09/2026 — Supabase es la fuente vigente del catálogo y los
 pedidos; incorpora autenticación, respaldo seguro y fotos en Storage.*
 
+**Actualización autorizada: 19/10/2026.** Validación de parámetros compartida;
+redondeo entero positivo; altas separadas de actualizaciones. Insumos incluyen
+`rolMotor` estable y combos `nombreComercial` y `descripcionComercial`, sin
+modificar los nombres históricos. Pedidos incluyen `revision` para rechazar
+cambios obsoletos; su número se asigna en una transacción. Nuevos combos usan UUID.
+
+Plantillas y teléfono comercial opcional viven en los parámetros centrales y
+entran en el JSON. El teléfono permanece vacío por decisión del dueño. El respaldo
+completo descarga las imágenes; al restaurar, si faltan fotos actuales se permite
+una copia previa de emergencia declarada y confirmada. Se validan recetas antes
+de escribir; la restauración es transaccional. Storage se prepara antes sin borrar
+objetos previos y puede dejar objetos sin referencia si la transacción falla.
+
+El borrador se aísla por usuario y pestaña en `sessionStorage`, caduca a las ocho
+horas y se elimina al guardar, descartar o cerrar sesión. No se sincroniza.
+Las fixtures sólo se cargan en desarrollo local vacío, nunca en producción.
+
+En confirmación, sin seña se omiten los renglones de seña y saldo (criterio 17).
+En recibos y rectificaciones se conserva cero cuando informa el estado financiero:
+anular el último pago debe mostrar total abonado cero. `{nota}` nunca expone la nota privada.
+`MEJORAS.md` registra la implementación y las verificaciones todavía pendientes.
+Stock, producción, facturación y pagos online conservan su exclusión del alcance.
+
 ---
 
 ## 1. Alcance

@@ -48,11 +48,11 @@
   /* === Sección 2 — Tokens de color === */
 
   /* Superficies */
-  --color-surface:                   #fff8f6;
+  --color-surface:                   #fbf8f4;
   --color-surface-dim:               #e4d7d4;
   --color-surface-container-lowest:  #ffffff;
-  --color-surface-container-low:     #fef1ed;
-  --color-surface-container:         #f9ebe7;
+  --color-surface-container-low:     #f5f0ea;
+  --color-surface-container:         #eee7de;
   --color-surface-container-high:    #f3e5e1;
   --color-surface-container-highest: #ede0dc;
   --color-inverse-surface:           #362f2c;
@@ -139,7 +139,7 @@
   --radio-xl: 1.5rem;   /* tarjetas */
   --radio-pill: 9999px; /* chips, etiquetas de estado */
 
-  --sombra-tarjeta: 0 8px 24px rgba(32, 26, 24, 0.06);
+  --sombra-tarjeta: 0 2px 8px rgba(32, 26, 24, 0.035);
   --sombra-flotante: 0 12px 32px rgba(32, 26, 24, 0.12);
 
   /* === Dimensionales exigidos en prosa por §5 y §6, no declarados como
@@ -152,4 +152,9 @@
   --fab: 56px;
   --relleno-tarjeta: 20px;
   --relleno-lista-inferior: 96px;
+  --ancho-catalogo: 1120px;
+  --ancho-ficha-catalogo: 280px;
+  --alto-foto-catalogo: 240px;
+  --ancho-cantidad: 88px;
+  --borde-foco: 2px;
 }

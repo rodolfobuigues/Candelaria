@@ -1,6 +1,8 @@
 import { CAMPOS_EXCEL, ENTIDADES_EXCEL, HOJAS_PEDIDOS, VERSION_EXCEL, MARCA_EXCEL, firmaEstadoExcel, iguales } from './excelContrato.js';
 import { PARAMETROS_INICIALES } from '../config/parametros.js';
 import { calcularCatalogoDesdeDatos } from './catalogoRepo.js';
+import { validarEstado } from './validacionDominio.js';
+import { inferirRolInsumo } from '../config/insumosFijos.js';
 
 const texto = (valor) => String(valor ?? '').trim();
 const normalizar = (valor) => texto(valor).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ');
@@ -94,6 +96,7 @@ export function prepararRevisionExcel(libro, estado) {
       }
       const editables = Object.fromEntries(CAMPOS_EXCEL[nombre].filter((campo) => !['calculado'].includes(campo.tipo) && !['id', 'heredaCodigo'].includes(campo.clave) && !(clave === 'combos' && campo.clave === 'codigo')).map((campo) => [campo.clave, fila[campo.clave]]));
       const registro = { ...(original ?? {}), ...editables, id };
+      if (clave === 'insumos' && original && original.nombre !== registro.nombre && !original.rolMotor) registro.rolMotor = inferirRolInsumo(original);
       for (const campo of CAMPOS_EXCEL[nombre].filter((item) => item.tipo === 'numero')) registro[campo.clave] = conservarPrecisionExcel(registro[campo.clave], original?.[campo.clave]);
       if (clave === 'productos') { registro.extras ??= []; registro.fotos ??= []; registro.heredaCostoDe ??= null; }
       if (clave === 'combos') { registro.lineas ??= []; registro.fotos ??= []; }
@@ -158,6 +161,10 @@ export function prepararRevisionExcel(libro, estado) {
     if (!(linea.tipo === 'PRODUCTO' ? candidatos.productos : candidatos.insumos).some((item) => item.id === linea.refId)) errores.push({ hoja: 'CombosLineas', fila: 1, mensaje: `referencia inexistente en combo ${combo.id}: ${linea.refId}` });
   }
   const cambios = []; const resumen = { nuevos: 0, modificados: 0, sinCambios: 0 }; const cambiosPrecios = [];
+  if (!errores.length) {
+    try { validarEstado({ ...candidatos, pedidos: candidatos.pedidos ?? [] }); }
+    catch (error) { errores.push({ hoja: 'Validación', fila: 1, mensaje: error.message }); }
+  }
   for (const [nombre, clave] of ENTIDADES_EXCEL) for (const { fila, registro, original } of presentados[clave].values()) {
     const diferencias = Object.keys(registro).filter((campo) => campo !== 'id' && !iguales(original?.[campo], registro[campo])).map((campo) => ({ campo: CAMPOS_EXCEL[nombre].find((item) => item.clave === campo)?.titulo ?? (campo === 'extras' ? 'Insumos adicionales' : campo === 'lineas' ? 'Componentes' : campo), antes: original?.[campo] ?? null, despues: registro[campo] }));
     if (original && diferencias.length === 0) resumen.sinCambios += 1;

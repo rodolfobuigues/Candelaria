@@ -8,6 +8,8 @@ import { construirMensajePedido } from '../../../persistencia/mensajes.js';
 import { formatearFecha, formatearFechaHora, formatearImporte } from '../../../config/formato.js';
 import { navegarA } from '../../enrutador.js';
 
+import { useCambiosSinGuardar } from '../../../hooks/useCambiosSinGuardar.js';
+
 function idNuevo(prefijo) {
   return `${prefijo}-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
 }
@@ -133,6 +135,7 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
   const [guardando, setGuardando] = useState(false);
   const [correccion, setCorreccion] = useState(null);
   const [motivoCorreccion, setMotivoCorreccion] = useState('');
+  const { marcarGuardado } = useCambiosSinGuardar(motivoCorreccion, Boolean(correccion));
   const mensaje = useMemo(() => pedido && construirMensajePedido(pedido), [pedido]);
 
   useEffect(() => {
@@ -152,14 +155,16 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
   }, [id]);
 
   async function actualizar(transformar, despuesDeGuardar = null) {
+    if (guardando) return;
     setGuardando(true);
     setError(null);
     try {
       const db = await abrirDB();
       const actualizado = transformar(pedido, new Date().toISOString());
-      await guardarPedido(db, actualizado);
-      setPedido({ ...actualizado, ...calcularDerivados(actualizado) });
-      despuesDeGuardar?.(actualizado);
+      const persistido = await guardarPedido(db, actualizado);
+      setPedido({ ...persistido, ...calcularDerivados(persistido) });
+      marcarGuardado();
+      despuesDeGuardar?.(persistido);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -219,11 +224,11 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
       if (!evento) {
         const db = await abrirDB();
         const registrado = registrarMensaje(pedido, { id: globalThis.crypto?.randomUUID?.() ?? `mensaje-${Date.now()}`, fecha: new Date().toISOString(), texto, categoria: 'confirmacion' });
-        await guardarPedido(db, registrado);
-        setPedido({ ...registrado, ...calcularDerivados(registrado) });
+        const persistido = await guardarPedido(db, registrado);
+        setPedido({ ...persistido, ...calcularDerivados(persistido) });
       }
     } catch (e) {
-      setError('No se pudo copiar el mensaje en este dispositivo.');
+      setError(`No se pudo completar la copia y su registro: ${e.message}`);
     }
   }
 
@@ -240,6 +245,7 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
         {pedido.clienteTelefono && <a href={`tel:${pedido.clienteTelefono}`} class="pedido-telefono">{pedido.clienteTelefono}</a>}
       </section>
 
+      <section class="tarjeta pedido-siguiente-accion" aria-label="Resumen del pedido"><div><span class="etiqueta">Saldo pendiente</span><strong class="importe-l">{formatearImporte(pedido.saldo)}</strong></div><p class="texto-cuerpo-s">{pedido.saldo > 0 ? (pedido.estadoEntrega === 'PENDIENTE' ? 'Pendiente de cobro y entrega.' : 'Entregado. Falta completar el cobro.') : (pedido.estadoEntrega === 'PENDIENTE' ? 'Cobro completo. Falta entregar.' : 'Pedido cobrado y entregado.')}</p>{pedido.saldo > 0 && <button type="button" class="boton-primario" onClick={() => navegarA(`pago/${pedido.id}?origen=${encodeURIComponent(origen)}${filtroOrigen ? `&filtro=${encodeURIComponent(filtroOrigen)}` : ''}`)}>Registrar pago</button>}{pedido.saldo <= 0 && pedido.estadoEntrega === 'PENDIENTE' && <button type="button" class="boton-primario" disabled={guardando} onClick={marcarComoEntregado}>Marcar entregado</button>}</section>
       <section class="ficha-seccion">
         <h2 class="texto-seccion">Nota interna</h2>
         <p class="pedido-nota">{pedido.notaInterna || 'Sin nota interna.'}</p>
@@ -267,10 +273,9 @@ export function Pedido({ id, origen = 'pedidos', filtroOrigen = null }) {
         confirmarAnulacion={confirmarAnulacionPago}
         guardando={guardando}
       />
-      <MensajesGenerados pedido={pedido} copiar={copiarMensaje} />
-      <Historial pedido={pedido} />
+      <details class="ficha-seccion"><summary>Actividad y mensajes · {pedido.historial.length} registros</summary><MensajesGenerados pedido={pedido} copiar={copiarMensaje} /><Historial pedido={pedido} /></details>
 
-      {error && <p class="aviso">{error}</p>}
+      {error && <div class="aviso" role="alert"><p>{error}</p><button type="button" class="boton-secundario" disabled={guardando} onClick={async () => { try { setPedido(await obtenerPedido(await abrirDB(), id)); setError(null); cancelarCorreccion(); } catch (e) { setError(e.message); } }}>Actualizar pedido</button></div>}
       <section class="pedido-acciones">
         {pedido.estadoEntrega === 'PENDIENTE' && <button type="button" class="boton-primario" disabled={guardando} onClick={marcarComoEntregado}>Marcar entregado</button>}
         {pedido.estadoEntrega === 'ENTREGADO' && correccion?.tipo !== 'entrega' && (

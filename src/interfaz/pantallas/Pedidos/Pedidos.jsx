@@ -4,23 +4,16 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { abrirDB } from '../../../persistencia/db.js';
 import { listarPedidos } from '../../../persistencia/pedidosRepo.js';
 import { formatearFecha, formatearImporte } from '../../../config/formato.js';
-import { navegarA } from '../../enrutador.js';
+import { navegarA, useRuta } from '../../enrutador.js';
+
+import { filtrarPedidos } from '../../formularios.js';
 
 const FILTROS = [
   { id: 'SALDO', etiqueta: 'Con saldo' },
   { id: 'ENTREGAR', etiqueta: 'A entregar' },
   { id: 'CERRADOS', etiqueta: 'Cerrados' },
+  { id: 'TODOS', etiqueta: 'Todos' },
 ];
-
-function esCerrado(pedido) {
-  return pedido.estadoEntrega === 'ENTREGADO' && pedido.saldo <= 0;
-}
-
-function coincideFiltro(pedido, filtro) {
-  if (filtro === 'SALDO') return pedido.saldo > 0;
-  if (filtro === 'ENTREGAR') return pedido.estadoEntrega === 'PENDIENTE';
-  return esCerrado(pedido);
-}
 
 function etiquetaCobro(estadoCobro) {
   return estadoCobro.toLowerCase().replace('_', '-');
@@ -52,7 +45,10 @@ function TarjetaPedido({ pedido, filtro }) {
 }
 
 export function Pedidos() {
+  const ruta = useRuta();
   const [filtro, setFiltro] = useState(() => new URLSearchParams(globalThis.location.hash.split('?')[1] ?? '').get('filtro') ?? 'SALDO');
+  useEffect(() => { const elegido = new URLSearchParams(ruta.split('?')[1] ?? '').get('filtro'); setFiltro(FILTROS.some((item) => item.id === elegido) ? elegido : 'SALDO'); }, [ruta]);
+  const [busqueda, setBusqueda] = useState('');
   const [pedidos, setPedidos] = useState(null);
   const [error, setError] = useState(null);
 
@@ -71,15 +67,17 @@ export function Pedidos() {
     return () => { activo = false; };
   }, []);
 
-  const visibles = useMemo(() => pedidos?.filter((pedido) => coincideFiltro(pedido, filtro)) ?? [], [pedidos, filtro]);
+  const visibles = useMemo(() => filtrarPedidos(pedidos ?? [], filtro, busqueda), [pedidos, filtro, busqueda]);
 
   return (
     <section class="pedidos-pantalla">
+      <label class="campo-entrada"><span>Buscar pedido</span><input type="search" placeholder="Nombre del cliente o número" value={busqueda} onInput={(e) => setBusqueda(e.currentTarget.value)} /></label>
       <div class="fila-chips pedidos-filtros" role="group" aria-label="Filtrar pedidos">
         {FILTROS.map((item) => (
-          <button type="button" class="chip-filtro" aria-pressed={filtro === item.id} onClick={() => setFiltro(item.id)} key={item.id}>{item.etiqueta}</button>
+          <button type="button" class="chip-filtro" aria-pressed={filtro === item.id} onClick={() => { setFiltro(item.id); navegarA(`pedidos?filtro=${item.id}`); }} key={item.id}>{item.etiqueta}</button>
         ))}
       </div>
+      {pedidos && <section class="tarjeta pedidos-resumen" aria-live="polite"><span>{visibles.length} {visibles.length === 1 ? 'pedido' : 'pedidos'} en esta vista</span><strong class="importe">Saldo pendiente: {formatearImporte(visibles.reduce((total, pedido) => total + Math.max(0, pedido.saldo), 0))}</strong></section>}
       {error && <p class="aviso">No se pudieron cargar los pedidos: {error}</p>}
       {!pedidos && !error && <p class="texto-cuerpo-s">Cargando pedidos…</p>}
       {pedidos && visibles.length === 0 && (

@@ -1,94 +1,90 @@
-// Exportación e importación del respaldo JSON — ESPECIFICACION.md § 2 y § 5.6.
-// Único mecanismo de respaldo real de la app. No confundir con la
-// exportación/importación en Excel (mecanismo aparte, no intercambiable).
+// Respaldo autocontenido: fotos descargadas y registros en una transacción.
 import { TIENDAS } from './esquema.js';
-import { obtenerTodos, guardar, eliminarPorId } from './db.js';
-import { listarPedidos, guardarPedido } from './pedidosRepo.js';
+import { obtenerTodos, restaurarEstadoAtomico } from './db.js';
+import { calcularDerivados } from './pedidoLogica.js';
+import { validarEstado } from './validacionDominio.js';
+import { guardarFotosEnStorage, esFotoBase64 } from './fotosStorage.js';
+import { calcularCatalogoDesdeDatos } from './catalogoRepo.js';
+import { PARAMETROS_INICIALES } from '../config/parametros.js';
 
 export const VERSION_RESPALDO = 1;
-
-const COLECCIONES = [
-  ['insumos', TIENDAS.INSUMOS, (db, tienda, registro) => guardar(db, tienda, registro)],
-  ['productos', TIENDAS.PRODUCTOS, (db, tienda, registro) => guardar(db, tienda, registro)],
-  ['combos', TIENDAS.COMBOS, (db, tienda, registro) => guardar(db, tienda, registro)],
-  ['parametros', TIENDAS.PARAMETROS, (db, tienda, registro) => guardar(db, tienda, registro)],
-  ['pedidos', TIENDAS.PEDIDOS, (db, _tienda, registro) => guardarPedido(db, registro)],
-];
+const CLAVES = Object.values(TIENDAS);
 
 export function validarRespaldo(respaldo) {
   if (!respaldo || typeof respaldo !== 'object') throw new Error('El respaldo no contiene un objeto válido.');
   if (respaldo.version !== VERSION_RESPALDO) throw new Error(`La versión del respaldo debe ser ${VERSION_RESPALDO}.`);
-
-  for (const [clave] of COLECCIONES) {
-    const registros = respaldo[clave];
-    if (!Array.isArray(registros)) throw new Error(`El respaldo no contiene la colección ${clave}.`);
-    const ids = new Set();
-    for (const [indice, registro] of registros.entries()) {
-      if (!registro || typeof registro !== 'object' || !String(registro.id ?? '').trim()) {
-        throw new Error(`${clave}, registro ${indice + 1}: falta un identificador válido.`);
-      }
-      const id = String(registro.id);
-      if (ids.has(id)) throw new Error(`${clave}: el identificador ${id} está duplicado.`);
-      ids.add(id);
+  for (const clave of CLAVES) if (!Array.isArray(respaldo[clave])) throw new Error(`El respaldo no contiene la colección ${clave}.`);
+  validarEstado(respaldo);
+  const parametros = { ...PARAMETROS_INICIALES, ...respaldo.parametros.find((registro) => registro.id === 'actuales') };
+  calcularCatalogoDesdeDatos(respaldo, parametros);
+  if (respaldo.medios !== undefined) {
+    if (!Array.isArray(respaldo.medios)) throw new Error('La colección de fotos del respaldo no es válida.');
+    const urls = new Set();
+    for (const medio of respaldo.medios) {
+      if (!medio || !/^https?:\/\//i.test(medio.url) || !esFotoBase64(medio.datos) || urls.has(medio.url)) throw new Error('El respaldo contiene una foto inválida o repetida.');
+      urls.add(medio.url);
+    }
+    for (const clave of ['productos', 'combos']) for (const registro of respaldo[clave]) for (const foto of registro.fotos ?? []) {
+      if (!esFotoBase64(foto) && !urls.has(foto)) throw new Error(`Falta la copia de la foto del registro ${registro.id}.`);
     }
   }
   return respaldo;
 }
 
-export async function exportarRespaldo(db) {
-  // listarPedidos() deriva total/pagado/saldo/estadoCobro al leer: nunca
-  // están guardados en IndexedDB (ver pedidosRepo.js).
-  const [insumos, productos, combos, parametros, pedidos] = await Promise.all([
-    obtenerTodos(db, TIENDAS.INSUMOS),
-    obtenerTodos(db, TIENDAS.PRODUCTOS),
-    obtenerTodos(db, TIENDAS.COMBOS),
-    obtenerTodos(db, TIENDAS.PARAMETROS),
-    listarPedidos(db),
-  ]);
-
-  return {
-    version: VERSION_RESPALDO,
-    exportadoEn: new Date().toISOString(),
-    insumos,
-    productos,
-    combos,
-    parametros,
-    pedidos,
-  };
+async function leerEstado(db) {
+  return Object.fromEntries(await Promise.all(CLAVES.map(async (clave) => [clave, await obtenerTodos(db, clave)])));
 }
 
-async function aplicarRespaldo(db, respaldo) {
-  // Primero se crean o actualizan todos los registros. Ninguna colección se
-  // vacía por adelantado, así una falla temprana no deja la base en blanco.
-  for (const [clave, tienda, guardarRegistro] of COLECCIONES) {
-    for (const registro of respaldo[clave]) await guardarRegistro(db, tienda, registro);
-  }
+async function fotoEmbebida(url, descargar) {
+  function errorFoto(mensaje) { const error = new Error(mensaje); error.codigo = 'FOTO_NO_DISPONIBLE'; return error; }
+  let respuesta;
+  try { respuesta = await descargar(url); } catch { throw errorFoto('No se pudo descargar una foto. El respaldo no se generó; reintentá con conexión.'); }
+  if (!respuesta.ok) throw errorFoto('No se pudo descargar una foto. El respaldo no se generó completo.');
+  const mime = respuesta.headers.get('content-type')?.split(';')[0];
+  if (!/^image\/[a-z0-9.+-]+$/i.test(mime ?? '')) throw errorFoto('La respuesta de una foto no contiene una imagen válida.');
+  const bytes = new Uint8Array(await respuesta.arrayBuffer());
+  let binario = '';
+  for (let inicio = 0; inicio < bytes.length; inicio += 8192) binario += String.fromCharCode(...bytes.subarray(inicio, inicio + 8192));
+  return `data:${mime};base64,${globalThis.btoa(binario)}`;
+}
 
-  // Solo después de completar todos los guardados se quitan los registros que
-  // no pertenecen al respaldo seleccionado.
-  for (const [clave, tienda] of COLECCIONES) {
-    const idsDestino = new Set(respaldo[clave].map((registro) => String(registro.id)));
-    const actuales = await obtenerTodos(db, tienda);
-    for (const registro of actuales) {
-      if (!idsDestino.has(String(registro.id))) await eliminarPorId(db, tienda, registro.id);
-    }
+export async function exportarRespaldo(db, { descargar = globalThis.fetch, incluirMedios = true } = {}) {
+  const estado = await leerEstado(db);
+  const urls = new Set(['productos', 'combos'].flatMap((clave) => estado[clave].flatMap((registro) => (registro.fotos ?? []).filter((foto) => !esFotoBase64(foto)))));
+  const medios = [];
+  if (incluirMedios) for (const url of urls) medios.push({ url, datos: await fotoEmbebida(url, descargar) });
+  return { version: VERSION_RESPALDO, exportadoEn: new Date().toISOString(), ...estado, pedidos: estado.pedidos.map((pedido) => ({ ...pedido, ...calcularDerivados(pedido) })), ...(incluirMedios ? { medios } : {}) };
+}
+
+// Recuperar una foto eliminada no puede depender de volver a descargarla.
+// La copia de emergencia conserva datos y referencias y declara su límite.
+export async function crearCopiaPreviaRestauracion(db, opciones = {}) {
+  try { return { respaldo: await exportarRespaldo(db, opciones), completo: true }; }
+  catch (error) {
+    if (error.codigo !== 'FOTO_NO_DISPONIBLE') throw error;
+    const respaldo = await exportarRespaldo(db, { incluirMedios: false });
+    return { completo: false, respaldo: { ...respaldo, advertenciaMedios: 'Copia de emergencia: conserva datos y URLs, sin copia de las fotos externas.' } };
   }
 }
 
-// Reemplaza la base sin vaciarla primero. Conserva una copia en memoria y, si
-// algún guardado o borrado falla, intenta volver automáticamente al estado
-// original antes de informar el error.
 export async function importarRespaldo(db, respaldo) {
   validarRespaldo(respaldo);
-  const original = await exportarRespaldo(db);
-  try {
-    await aplicarRespaldo(db, respaldo);
-  } catch (errorImportacion) {
-    try {
-      await aplicarRespaldo(db, original);
-    } catch (errorRecuperacion) {
-      throw new Error(`La importación falló (${errorImportacion.message}) y la recuperación automática también falló (${errorRecuperacion.message}). Conservá el respaldo previo descargado.`);
+  const previo = await leerEstado(db);
+  const pedidosPrevios = new Map(previo.pedidos.map((pedido) => [pedido.id, pedido]));
+  const fotos = new Map((respaldo.medios ?? []).map((medio) => [medio.url, medio.datos]));
+  const destino = Object.fromEntries(CLAVES.map((clave) => [clave, respaldo[clave].map((registro) => {
+    if (clave === 'pedidos') {
+      const { total, pagado, saldo, estadoCobro, ...persistido } = registro;
+      const actual = pedidosPrevios.get(registro.id);
+      return actual ? { ...persistido, revision: Math.max(actual.revision ?? 0, persistido.revision ?? 0) + 1 } : persistido;
     }
-    throw new Error(`La importación falló y se restauró el estado anterior: ${errorImportacion.message}`);
+    if (clave === 'productos' || clave === 'combos') return { ...registro, ...(registro.fotos ? { fotos: registro.fotos.map((foto) => fotos.get(foto) ?? foto) } : {}) };
+    return registro;
+  })]));
+  if (db?.tipo === 'supabase') {
+    // Storage no participa de la transacción SQL. Las rutas deterministas
+    // permiten reintentar; nunca se borran objetos previos si falla la base.
+    for (const clave of ['productos', 'combos']) for (let i = 0; i < destino[clave].length; i += 1) destino[clave][i] = await guardarFotosEnStorage(destino[clave][i], clave);
   }
+  await restaurarEstadoAtomico(db, destino, previo);
 }

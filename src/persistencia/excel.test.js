@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { test } from 'node:test';
+import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { crearLibroExcel, escribirExcel, leerExcelIntercambio } from './excelLibro.js';
 import { prepararRevisionExcel } from './excelRevision.js';
@@ -9,6 +9,11 @@ import { firmaEstadoExcel } from './excelContrato.js';
 import { abrirDB, guardar, aplicarCambiosExcelAtomicos } from './db.js';
 import { exportarRespaldo } from './respaldo.js';
 import { PARAMETROS_INICIALES } from '../config/parametros.js';
+
+beforeEach((t) => {
+  // Imágenes del fixture: ningún test intenta acceder a una URL real.
+  t.mock.method(globalThis, 'fetch', async () => new Response(new Uint8Array([137,80,78,71]), { headers: { 'content-type': 'image/png' } }));
+});
 
 // Datos exclusivamente de prueba, en fake-indexeddb. No usan Supabase.
 export function estadoPrueba() {

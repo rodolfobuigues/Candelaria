@@ -1,0 +1,30 @@
+import 'fake-indexeddb/auto';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { abrirDB, guardar } from '../persistencia/db.js';
+import { TIENDAS } from '../persistencia/esquema.js';
+import { construirInsumos, construirProductos } from '../desarrollo/siembra.js';
+import { invalidarCatalogo } from '../persistencia/catalogoRepo.js';
+import { cargarAdministracion } from './cargaAdministracion.js';
+
+test('la administración permite reparar insumos aunque no se puedan calcular las recetas', async () => {
+  const db = await abrirDB();
+  const insumos = construirInsumos(readFileSync(new URL('../../fixtures_insumos.csv', import.meta.url), 'utf8'));
+  const primero = insumos.find((insumo) => insumo.codigo === 'M1');
+  await guardar(db, TIENDAS.INSUMOS, primero);
+  const producto = construirProductos(readFileSync(new URL('../../fixtures_productos.csv', import.meta.url), 'utf8')).find((item) => item.codigo === 'V1');
+  await guardar(db, TIENDAS.PRODUCTOS, producto);
+  invalidarCatalogo();
+  const incompleto = await cargarAdministracion(db);
+  assert.equal(incompleto.datos.calculado, false);
+  assert.deepEqual(incompleto.datos.insumos, [primero]);
+  assert.match(incompleto.error, /Revisá los insumos/);
+  for (const insumo of insumos) await guardar(db, TIENDAS.INSUMOS, insumo);
+  invalidarCatalogo();
+  const reparado = await cargarAdministracion(db);
+  assert.equal(reparado.datos.calculado, true);
+  assert.equal(reparado.datos.insumos.length, insumos.length);
+  assert.equal(reparado.error, null);
+  db.close();
+});

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { test, describe, before, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { abrirDB, obtenerPorId, guardar, eliminarTodo } from './db.js';
-import { obtenerPedido, listarPedidos, guardarPedido } from './pedidosRepo.js';
+import { obtenerPedido, listarPedidos, guardarPedido, crearPedidoNumerado } from './pedidosRepo.js';
 import { crearPedido, registrarPago } from './pedidoLogica.js';
 import { TIENDAS } from './esquema.js';
 
@@ -32,6 +32,29 @@ function pedidoConSeña() {
 }
 
 describe('pedidosRepo — derivados reales, nunca persistidos', () => {
+  test('dos pagos concurrentes no se pisan; la copia obsoleta se rechaza y permite reintentar', async () => {
+    await guardarPedido(db, pedidoConSeña());
+    const sesionA = await obtenerPedido(db, 'ped1');
+    const sesionB = await obtenerPedido(db, 'ped1');
+    const pagoA = { id: 'pago-A', fecha: '2026-07-20T11:00:00.000Z', monto: 1000, medio: 'EFECTIVO' };
+    const pagoB = { ...pagoA, id: 'pago-B', monto: 2000 };
+    const resultados = await Promise.allSettled([guardarPedido(db, registrarPago(sesionA, pagoA)), guardarPedido(db, registrarPago(sesionB, pagoB))]);
+    assert.equal(resultados.filter((r) => r.status === 'fulfilled').length, 1);
+    assert.match(resultados.find((r) => r.status === 'rejected').reason.message, /otra sesión/);
+    let actual = await obtenerPedido(db, 'ped1');
+    const faltante = actual.pagos.some((p) => p.id === pagoA.id) ? pagoB : pagoA;
+    await guardarPedido(db, registrarPago(actual, faltante));
+    actual = await obtenerPedido(db, 'ped1');
+    assert.equal(actual.pagos.length, 3);
+    assert.equal(actual.pagado, 18000);
+  });
+
+  test('altas simultáneas reciben números únicos y parten del máximo real', async () => {
+    await guardar(db, 'pedidos', { ...pedidoConSeña(), numero: 15 });
+    const [a, b] = await Promise.all(['nuevo-A', 'nuevo-B'].map((id) => crearPedidoNumerado(db, { ...pedidoConSeña(), id, pagos: [] })));
+    assert.deepEqual([a.numero, b.numero].sort((x, y) => x - y), [16, 17]);
+    assert.match(a.historial[0].descripcion, new RegExp(`#${a.numero} `));
+  });
   test('los cuatro campos derivados falseados a mano en IndexedDB vuelven correctos al leer', async () => {
     const pedido = pedidoConSeña();
 

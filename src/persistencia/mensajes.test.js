@@ -48,3 +48,18 @@ test('el mensaje de corrección de entrega incluye el motivo', () => {
   assert.match(mensaje, /continúa pendiente de entrega/i);
   assert.match(mensaje, /Todavía no fue retirado/);
 });
+
+test('confirmación sin seña omite seña y saldo con la misma plantilla', () => {
+  const mensaje = construirMensajePedido({...pedido,pagos:[],pagado:0,saldo:pedido.total});
+  assert.doesNotMatch(mensaje,/Seña recibida|Saldo:/i);
+  assert.match(mensaje,/Total:/);
+  const conSena = construirMensajePedido(pedido);
+  assert.match(conSena,/Seña recibida:/);
+  assert.match(conSena,/Saldo:/);
+});
+
+test('una plantilla personalizada se aplica sin exponer la nota interna', () => {
+  const mensaje = construirMensajePedido({...pedido,notaInterna:'PRIVADO'}, {plantilla:'Hola {cliente}\nNota: {nota}\nTotal: {total}'});
+  assert.match(mensaje,/Hola Maira/);
+  assert.doesNotMatch(mensaje,/PRIVADO|\{nota\}|Nota:/);
+});

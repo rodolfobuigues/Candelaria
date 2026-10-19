@@ -3,7 +3,7 @@
 // se redondea siempre hacia arriba al múltiplo de $100.
 export function redondearPrecioVenta(valor) {
   const numero = Number(valor);
-  if (!Number.isFinite(numero) || numero < 0) return 0;
+  if (!Number.isFinite(numero) || numero < 0) throw new Error('El precio debe ser un número finito no negativo.');
   const multiplo = numero > 1000 ? 100 : 10;
   return numero > 1000
     ? Math.ceil(numero / multiplo) * multiplo

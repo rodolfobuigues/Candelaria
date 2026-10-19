@@ -7,15 +7,24 @@
     "test:detalle": "node --test --test-reporter=spec",
     "dev": "vite",
     "build": "vite build",
+    "verificar:build": "node scripts/verificar-build.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
-    "vite": "8.1.5"
+    "vite": "8.1.6"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "exceljs": "4.4.0",
     "preact": "10.29.7"
+  },
+  "overrides": {
+    "vite": {
+      "postcss": "8.5.31"
+    },
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
   }
 }

@@ -1,11 +1,10 @@
 /** @jsx h */
 import { h } from 'preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
-import { navegarA } from '../../enrutador.js';
-import { abrirDB, obtenerTodos } from '../../../persistencia/db.js';
-import { TIENDAS } from '../../../persistencia/esquema.js';
-import { obtenerCatalogo } from '../../../persistencia/catalogoRepo.js';
-import { obtenerParametrosVigentes } from '../../../config/parametrosRepo.js';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { navegarA, useRuta } from '../../enrutador.js';
+import { abrirDB } from '../../../persistencia/db.js';
+import { invalidarCatalogo } from '../../../persistencia/catalogoRepo.js';
+import { cargarAdministracion } from '../../cargaAdministracion.js';
 import { formatearImporte, formatearCostoUnitario } from '../../../config/formato.js';
 import { VisorFotos } from '../../comun/GaleriaFotos.jsx';
 
@@ -55,7 +54,7 @@ function agruparProductos(productos) {
 function FilaProducto({ producto }) {
   return (
     <li>
-      <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`producto/${producto.id}?origen=productos`)}>
+      <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`producto/${encodeURIComponent(producto.id)}?origen=productos`)}>
         <div class="fila-lista__contenido">
           <strong class="nombre-truncado">{producto.nombre}</strong>
           <span class="texto-cuerpo-s fila-lista__codigo">{producto.codigo}</span>
@@ -107,7 +106,7 @@ function ListaCombos({ combos, productosPorId, insumosPorId, busqueda }) {
     <ul class="lista">
       {visibles.map((combo) => (
         <li key={combo.id}>
-          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`combo-editar/${combo.id}?origen=combos`)}>
+          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`combo-editar/${encodeURIComponent(combo.id)}?origen=combos`)}>
           <div class="fila-lista__contenido">
             <strong class="nombre-truncado">Combo {combo.id} · {combo.nombre}</strong>
             <span class="texto-cuerpo-s fila-lista__codigo nombre-truncado" title={describirCombo(combo, productosPorId, insumosPorId)}>
@@ -131,7 +130,7 @@ function ListaInsumos({ insumos, busqueda }) {
     <ul class="lista">
       {visibles.map((insumo) => (
         <li key={insumo.id}>
-          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`insumo-editar/${insumo.id}?origen=insumos`)}>
+          <button type="button" class="fila-lista fila-lista--interactiva" onClick={() => navegarA(`insumo-editar/${encodeURIComponent(insumo.id)}?origen=insumos`)}>
           <div class="fila-lista__contenido">
             <strong class="nombre-truncado">{insumo.nombre}</strong>
             <span class="texto-cuerpo-s fila-lista__codigo">{insumo.codigo} · {insumo.unidad}</span>
@@ -146,29 +145,43 @@ function ListaInsumos({ insumos, busqueda }) {
 }
 
 export function Productos() {
-  const [solapa, setSolapa] = useState(() => new URLSearchParams(globalThis.location.hash.split('?')[1] ?? '').get('solapa') ?? 'combos');
+  const ruta = useRuta();
+  const [solapa, setSolapa] = useState('combos');
+  const botonesSolapa = useRef(new Map());
+  useEffect(() => { const solicitada = new URLSearchParams(ruta.split('?')[1] ?? '').get('solapa'); setSolapa(SOLAPAS.some((item) => item.id === solicitada) ? solicitada : 'combos'); }, [ruta]);
+  function seleccionarSolapa(id, enfocar = false) {
+    setSolapa(id); setBusqueda('');
+    navegarA(`productos?solapa=${id}`);
+    if (enfocar) botonesSolapa.current.get(id)?.focus();
+  }
+  function navegarSolapas(evento, id) {
+    const indice = SOLAPAS.findIndex((item) => item.id === id);
+    const destinos = { ArrowRight: (indice + 1) % SOLAPAS.length, ArrowLeft: (indice + SOLAPAS.length - 1) % SOLAPAS.length, Home: 0, End: SOLAPAS.length - 1 };
+    if (!(evento.key in destinos)) return;
+    evento.preventDefault();
+    seleccionarSolapa(SOLAPAS[destinos[evento.key]].id, true);
+  }
   const [busqueda, setBusqueda] = useState('');
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
+  const [reintento, setReintento] = useState(0);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     let activo = true;
     async function cargar() {
+      setCargando(true); setError(null);
       try {
         const db = await abrirDB();
-        const parametros = await obtenerParametrosVigentes(db);
-        const [catalogo, insumos] = await Promise.all([
-          obtenerCatalogo(db, parametros),
-          obtenerTodos(db, TIENDAS.INSUMOS),
-        ]);
-        if (activo) setDatos({ ...catalogo, insumos });
+        const resultado = await cargarAdministracion(db);
+        if (activo) { setDatos(resultado.datos); setError(resultado.error); }
       } catch (e) {
         if (activo) setError(e.message);
-      }
+      } finally { if (activo) setCargando(false); }
     }
     cargar();
     return () => { activo = false; };
-  }, []);
+  }, [reintento]);
 
   const indices = useMemo(() => {
     if (!datos) return { productosPorId: new Map(), insumosPorId: new Map() };
@@ -185,8 +198,13 @@ export function Productos() {
           <button
             type="button"
             role="tab"
+            id={`solapa-catalogo-${item.id}`}
+            aria-controls={`panel-catalogo-${item.id}`}
+            tabIndex={solapa === item.id ? 0 : -1}
+            ref={(elemento) => { if (elemento) botonesSolapa.current.set(item.id, elemento); else botonesSolapa.current.delete(item.id); }}
             aria-selected={solapa === item.id}
-            onClick={() => { setSolapa(item.id); setBusqueda(''); }}
+            onKeyDown={(evento) => navegarSolapas(evento, item.id)}
+            onClick={() => seleccionarSolapa(item.id)}
             key={item.id}
           >
             {item.etiqueta}
@@ -215,20 +233,20 @@ export function Productos() {
         />
       </label>
 
-      {error && <p class="aviso">No se pudo cargar el catálogo: {error}</p>}
-      {!datos && !error && <p class="texto-cuerpo-s">Cargando catálogo…</p>}
-      {datos && solapa === 'productos' && <ListaProductos productos={datos.productos} busqueda={busqueda} />}
-      {datos && solapa === 'combos' && (
+      {error && <div class="aviso" role="alert"><p>{error}</p><button type="button" class="boton-secundario" disabled={cargando} onClick={() => { invalidarCatalogo(); setReintento((actual) => actual + 1); }}>Reintentar carga</button></div>}
+      {cargando && <p class="texto-cuerpo-s" role="status">Cargando catálogo…</p>}
+      <section role="tabpanel" id="panel-catalogo-productos" aria-labelledby="solapa-catalogo-productos" hidden={solapa !== 'productos'} tabIndex={0}>{datos?.calculado && solapa === 'productos' && <ListaProductos productos={datos.productos} busqueda={busqueda} />}</section>
+      <section role="tabpanel" id="panel-catalogo-combos" aria-labelledby="solapa-catalogo-combos" hidden={solapa !== 'combos'} tabIndex={0}>{datos?.calculado && solapa === 'combos' && (
         <ListaCombos
           combos={datos.combos}
           productosPorId={indices.productosPorId}
           insumosPorId={indices.insumosPorId}
           busqueda={busqueda}
         />
-      )}
-      {datos && solapa === 'insumos' && <ListaInsumos insumos={datos.insumos} busqueda={busqueda} />}
+      )}</section>
+      <section role="tabpanel" id="panel-catalogo-insumos" aria-labelledby="solapa-catalogo-insumos" hidden={solapa !== 'insumos'} tabIndex={0}>{datos && solapa === 'insumos' && <ListaInsumos insumos={datos.insumos} busqueda={busqueda} />}</section>
 
-      <button type="button" class="boton-flotante" aria-label={`Nuevo ${solapa === 'combos' ? 'combo' : solapa === 'productos' ? 'producto' : 'insumo'}`} onClick={() => navegarA(`${solapa === 'combos' ? 'combo-nuevo' : solapa === 'productos' ? 'producto-nuevo' : 'insumo-nuevo'}`)}>+</button>
+
     </section>
   );
 }

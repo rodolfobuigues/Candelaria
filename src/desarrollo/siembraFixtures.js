@@ -1,8 +1,8 @@
 // Punto de entrada de la siembra para el navegador: carga las 3 fixtures
 // como asset de Vite y llama a las funciones puras de siembra.js.
 //
-// Se importa de forma dinámica desde src/interfaz/main.jsx y se ejecuta solo
-// cuando las tres tablas del catálogo están completamente vacías.
+// Se importa dinámicamente desde inicializacion.js sólo con DEV activo y
+// todas las colecciones vacías. No forma parte de los recursos de producción.
 import textoInsumos from '../../fixtures_insumos.csv?raw';
 import textoProductos from '../../fixtures_productos.csv?raw';
 import jsonCombos from '../../fixtures_combos.json';

@@ -14,29 +14,50 @@ function esUrlPublica(foto) {
   return /^https:\/\//i.test(String(foto ?? ''));
 }
 
-export function construirCatalogoPublico(catalogo, insumos) {
+function precioPublico(valor, id) {
+  const precio = Number(valor);
+  if (!['number', 'string'].includes(typeof valor) || (typeof valor === 'string' && !valor.trim()) || !Number.isFinite(precio) || precio < 0) throw new Error(`El precio público del combo ${id} no es válido.`);
+  return precio;
+}
+
+export function sugerirDescripcionComercial(combo, productos = []) {
+  const productosPorId = new Map(productos.map((producto) => [String(producto.id), producto]));
+  return (combo.lineas ?? []).filter((linea) => linea.tipo === 'PRODUCTO')
+    .map((linea) => {
+      const producto = productosPorId.get(String(linea.refId));
+      return producto ? `${formatearCantidad(linea.cantidad)} × ${producto.nombre}` : '';
+    }).filter(Boolean).join(', ');
+}
+
+export function normalizarBusqueda(texto) {
+  return String(texto ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('es-AR');
+}
+
+export function telefonoComercialPublico(telefono) {
+  const digitos = String(telefono ?? '').replace(/[\s()+-]/g, '');
+  return /^\d{8,15}$/.test(digitos) ? digitos : '';
+}
+
+export function construirCatalogoPublico(catalogo, _insumos = [], parametros = {}, { vistaPrevia = false } = {}) {
   const productosPorId = new Map(catalogo.productos.map((producto) => [String(producto.id), producto]));
-  const insumosPorId = new Map(insumos.map((insumo) => [String(insumo.id), insumo]));
-  return catalogo.combos.map((combo) => ({
+  return catalogo.combos.filter((combo) => combo.activo !== false).map((combo) => ({
     id: String(combo.id),
-    nombre: combo.nombre,
-    descripcion: combo.lineas.map((linea) => {
-      const componente = productosPorId.get(String(linea.refId)) ?? insumosPorId.get(String(linea.refId));
-      return `${formatearCantidad(linea.cantidad)} × ${componente?.nombre ?? linea.refId}`;
-    }).join(', '),
-    precio: Number(combo.precioCombo),
+    nombre: combo.nombreComercial?.trim() || combo.nombre,
+    descripcion: combo.descripcionComercial?.trim() || sugerirDescripcionComercial(combo, [...productosPorId.values()]),
+    precio: precioPublico(combo.precioCombo, combo.id),
     // No duplica imágenes Base64 en la tabla pública. Esas fotos aparecerán
     // cuando el creador ejecute la migración controlada a Storage.
-    fotos: (combo.fotos ?? []).filter(esUrlPublica),
+    fotos: (combo.fotos ?? []).filter((foto) => esUrlPublica(foto) || (vistaPrevia && /^data:image\//i.test(foto))),
     activo: true,
+    telefono_comercial: telefonoComercialPublico(parametros.telefonoComercial),
   }));
 }
 
 export async function obtenerCatalogoPublico(cliente = supabase) {
   if (!cliente) throw new Error('Supabase no está configurado.');
-  const { data, error } = await cliente.from(TABLA).select('id,nombre,descripcion,precio,fotos').eq('activo', true);
+  const { data, error } = await cliente.from(TABLA).select('id,nombre,descripcion,precio,fotos,telefono_comercial').eq('activo', true);
   if (error) throw error;
-  return (data ?? []).map((combo) => ({ ...combo, precio: Number(combo.precio), fotos: combo.fotos ?? [] }))
+  return (data ?? []).map((combo) => ({ ...combo, precio: precioPublico(combo.precio, combo.id), fotos: combo.fotos ?? [] }))
     .sort((a, b) => a.id.localeCompare(b.id, 'es-AR', { numeric: true }));
 }
 
@@ -48,7 +69,7 @@ export async function sincronizarCatalogoPublico(db, cliente = supabase) {
     obtenerCatalogo(db, parametros),
     obtenerTodos(db, TIENDAS.INSUMOS),
   ]);
-  const filas = construirCatalogoPublico(catalogo, insumos);
+  const filas = construirCatalogoPublico(catalogo, insumos, parametros);
   if (filas.length > 0) {
     const { error } = await cliente.from(TABLA).upsert(filas);
     if (error) throw error;

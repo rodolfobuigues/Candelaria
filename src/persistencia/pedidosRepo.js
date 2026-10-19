@@ -8,11 +8,11 @@
 // respaldo JSON deben pasar por acá, nunca por obtenerTodos/obtenerPorId/
 // guardar de db.js directamente sobre TIENDAS.PEDIDOS.
 import { TIENDAS } from './esquema.js';
-import { obtenerTodos, obtenerPorId, guardar } from './db.js';
+import { obtenerTodos, obtenerPorId, persistirPedidoAtomico } from './db.js';
 import { calcularDerivados } from './pedidoLogica.js';
 
 function conDerivados(pedido) {
-  return pedido ? { ...pedido, ...calcularDerivados(pedido) } : pedido;
+  return pedido ? { ...pedido, revision: pedido.revision ?? 0, ...calcularDerivados(pedido) } : pedido;
 }
 
 export async function obtenerPedido(db, id) {
@@ -29,5 +29,11 @@ export async function listarPedidos(db) {
 // un respaldo JSON exportado).
 export function guardarPedido(db, pedido) {
   const { total, pagado, saldo, estadoCobro, ...paraPersistir } = pedido;
-  return guardar(db, TIENDAS.PEDIDOS, paraPersistir);
+  return persistirPedidoAtomico(db, paraPersistir);
+}
+
+// El número visible se asigna en la misma transacción que crea el pedido.
+export function crearPedidoNumerado(db, pedido) {
+  const { total, pagado, saldo, estadoCobro, ...paraPersistir } = pedido;
+  return persistirPedidoAtomico(db, paraPersistir, { numerar: true });
 }

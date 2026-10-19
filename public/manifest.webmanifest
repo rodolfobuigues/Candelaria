@@ -5,8 +5,8 @@
   "start_url": "/Candelaria/",
   "scope": "/Candelaria/",
   "display": "standalone",
-  "background_color": "#f8f6f1",
-  "theme_color": "#6d4c41",
+  "background_color": "#fbf8f4",
+  "theme_color": "#944228",
   "icons": [
     {
       "src": "/Candelaria/icono-candelaria.svg",

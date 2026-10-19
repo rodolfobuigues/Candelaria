@@ -1,4 +1,3 @@
-import { sembrarFixtures } from './siembraFixtures.js';
 import { abrirDB, obtenerTodos } from '../persistencia/db.js';
 import { TIENDAS } from '../persistencia/esquema.js';
 import { supabaseConfigurado } from '../config/supabase.js';
@@ -9,8 +8,8 @@ export function resumirErrorInicializacion(error) {
   return `${mensaje}${codigo}`;
 }
 
-// Carga una única vez la fuente vigente del 18/08/26 cuando el catálogo aún
-// está vacío o quedó incompleto antes de comenzar a registrar pedidos.
+// Consulta el origen vigente sin alterar Supabase. Sólo el desarrollo local
+// completamente vacío puede cargar las fixtures históricas.
 export async function cargarFuenteInicialSiHaceFalta() {
   const db = await abrirDB();
   const [insumos, productos, combos, pedidos] = await Promise.all([
@@ -22,21 +21,8 @@ export async function cargarFuenteInicialSiHaceFalta() {
   if (supabaseConfigurado) {
     return { insumos: insumos.length, productos: productos.length, combos: combos.length, sembrado: false, fuente: 'Supabase' };
   }
-  const nombresFijos = new Set(insumos.map((insumo) => insumo.nombre?.trim().toLowerCase()));
-  const faltanInsumosFijos = [
-    ['cera alto pf'],
-    ['cera bajo pf'],
-    ['pabilo'],
-    ['yeso'],
-    ['esencia', 'escencia'],
-    ['colorante'],
-    ['aceite de coco'],
-  ].some((candidatos) => !candidatos.some((nombre) => nombresFijos.has(nombre)));
-
-  if (insumos.length === 0 && productos.length === 0 && combos.length === 0) {
-    return sembrarFixtures(db);
-  }
-  if (pedidos.length === 0 && faltanInsumosFijos) {
+  if (import.meta.env.DEV && insumos.length === 0 && productos.length === 0 && combos.length === 0 && pedidos.length === 0) {
+    const { sembrarFixtures } = await import('./siembraFixtures.js');
     return sembrarFixtures(db);
   }
   return { insumos: insumos.length, productos: productos.length, combos: combos.length, sembrado: false };

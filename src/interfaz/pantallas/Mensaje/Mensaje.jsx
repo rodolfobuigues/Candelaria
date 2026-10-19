@@ -6,6 +6,7 @@ import { obtenerPedido, guardarPedido } from '../../../persistencia/pedidosRepo.
 import { registrarMensaje, calcularDerivados } from '../../../persistencia/pedidoLogica.js';
 import { construirMensajePedido } from '../../../persistencia/mensajes.js';
 import { formatearImporte } from '../../../config/formato.js';
+import { cargarPlantilla } from '../../../config/plantillas.js';
 
 const TITULOS = {
   confirmacion: 'Confirmación lista',
@@ -20,7 +21,8 @@ export function Mensaje({ id, tipo = 'confirmacion', pagoId = null, accionId = n
   const [pedido, setPedido] = useState(null);
   const [error, setError] = useState(null);
   const [copiado, setCopiado] = useState(false);
-  const mensaje = useMemo(() => pedido && construirMensajePedido(pedido, { tipo, pagoId, accionId }), [pedido, tipo, pagoId, accionId]);
+  const [plantilla, setPlantilla] = useState(null);
+  const mensaje = useMemo(() => pedido && construirMensajePedido(pedido, { tipo, pagoId, accionId, plantilla }), [pedido, tipo, pagoId, accionId, plantilla]);
 
   useEffect(() => {
     let activo = true;
@@ -29,12 +31,13 @@ export function Mensaje({ id, tipo = 'confirmacion', pagoId = null, accionId = n
         const db = await abrirDB();
         const resultado = await obtenerPedido(db, id);
         if (!resultado) throw new Error('No encontramos ese pedido.');
-        const texto = construirMensajePedido(resultado, { tipo, pagoId, accionId });
+        const plantillaVigente = await cargarPlantilla(db, tipo);
+        const texto = construirMensajePedido(resultado, { tipo, pagoId, accionId, plantilla: plantillaVigente });
         const relacionadoId = accionId ?? pagoId ?? resultado.id;
         const idMensaje = `mensaje-${tipo}-${relacionadoId}`;
         const registrado = registrarMensaje(resultado, { id: idMensaje, fecha: new Date().toISOString(), texto, categoria: tipo, relacionadoId });
-        await guardarPedido(db, registrado);
-        if (activo) setPedido({ ...registrado, ...calcularDerivados(registrado) });
+        const persistido = await guardarPedido(db, registrado);
+        if (activo) { setPlantilla(plantillaVigente); setPedido({ ...persistido, ...calcularDerivados(persistido) }); }
       } catch (e) {
         if (activo) setError(e.message);
       }

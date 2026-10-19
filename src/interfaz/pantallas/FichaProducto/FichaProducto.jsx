@@ -142,14 +142,14 @@ export function FichaProducto({ codigo }) {
       </section>
 
       <section class="ficha-indicadores" aria-label="Indicadores de rentabilidad">
-        <Indicador etiqueta="Margen sobre costo" valor={`${numeroTexto(indicadores.margenSobreCosto * 100, 1)} %`} />
-        <Indicador etiqueta="Peso mano de obra" valor={`${numeroTexto(indicadores.pesoManoObra * 100, 1)} %`} />
+        <Indicador etiqueta="Margen sobre costo" valor={indicadores.margenSobreCosto == null ? 'No disponible' : `${numeroTexto(indicadores.margenSobreCosto * 100, 1)} %`} />
+        <Indicador etiqueta="Peso mano de obra" valor={indicadores.pesoManoObra == null ? 'No disponible' : `${numeroTexto(indicadores.pesoManoObra * 100, 1)} %`} />
         <Indicador etiqueta="Beneficio bruto" valor={formatearImporte(indicadores.beneficioBruto)} />
         <Indicador etiqueta="Beneficio neto" valor={formatearImporte(indicadores.beneficioNeto)} />
         <Indicador etiqueta="Minutos mano de obra" valor={`${numeroTexto(producto.minutosManoObra, 0)} min`} />
       </section>
 
-      <button type="button" class="boton-secundario" onClick={() => navegarA(`producto-editar/${producto.codigo}?origen=productos`)}>Editar receta</button>
+      <div class="fila-botones"><button type="button" class="boton-secundario" onClick={() => navegarA(`producto-editar/${producto.id}?origen=productos`)}>Editar receta</button><button type="button" class="boton-secundario" onClick={() => navegarA(`producto-nuevo?duplicar=${encodeURIComponent(producto.id)}`)}>Duplicar producto</button></div>
     </section>
   );
 }

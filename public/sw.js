@@ -1,10 +1,12 @@
-const CACHE = 'candelaria-v4';
+const PREFIJO_CACHE = 'candelaria-';
+const CACHE = `${PREFIJO_CACHE}v5`;
 const BASE = '/Candelaria/';
 const INICIALES = [BASE, `${BASE}manifest.webmanifest`, `${BASE}icono-candelaria.svg`, `${BASE}icono-candelaria-maskable.svg`];
 
 async function guardarVersionActual() {
   const cache = await caches.open(CACHE);
   const respuestaHtml = await fetch(BASE, { cache: 'reload' });
+  if (!respuestaHtml.ok) throw new Error('No se pudo descargar la aplicación.');
   await cache.put(BASE, respuestaHtml.clone());
   const html = await respuestaHtml.text();
   const version = await fetch(`${BASE}recursos-pwa.json`, { cache: 'reload' });
@@ -25,7 +27,7 @@ self.addEventListener('install', (evento) => {
 self.addEventListener('activate', (evento) => {
   evento.waitUntil(Promise.all([
     self.clients.claim(),
-    caches.keys().then((claves) => Promise.all(claves.filter((clave) => clave !== CACHE).map((clave) => caches.delete(clave)))),
+    caches.keys().then((claves) => Promise.all(claves.filter((clave) => clave.startsWith(PREFIJO_CACHE) && clave !== CACHE).map((clave) => caches.delete(clave)))),
   ]));
 });
 
@@ -36,7 +38,22 @@ self.addEventListener('message', (evento) => {
 self.addEventListener('fetch', (evento) => {
   if (evento.request.method !== 'GET') return;
   if (new URL(evento.request.url).origin !== self.location.origin) return;
+  const url = new URL(evento.request.url);
+  if (!url.pathname.startsWith(BASE)) return;
   evento.respondWith(fetch(evento.request).then((respuesta) => {
-    const copia = respuesta.clone(); caches.open(CACHE).then((cache) => cache.put(evento.request, copia)); return respuesta;
-  }).catch(() => caches.match(evento.request).then((respuesta) => respuesta ?? caches.match(BASE))));
+    if (respuesta.ok) {
+      const copia = respuesta.clone();
+      evento.waitUntil(caches.open(CACHE).then((cache) => cache.put(evento.request, copia)));
+    }
+    return respuesta;
+  }).catch(async () => {
+    const cache = await caches.open(CACHE);
+    const guardada = await cache.match(evento.request);
+    if (guardada) return guardada;
+    if (evento.request.mode === 'navigate') {
+      const inicio = await cache.match(BASE);
+      if (inicio) return inicio;
+    }
+    return Response.error();
+  }));
 });

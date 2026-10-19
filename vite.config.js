@@ -1,12 +1,5 @@
-// CLAUDE.md: PWA sin backend, host GitHub Pages con base '/Candelaria/'
-// (ESPECIFICACION.md § 2). Transform JSX clásico (jsxFactory/jsxFragment),
-// no el runtime automático: en Vite 8 (Rolldown) el runtime automático
-// resuelve react/jsx-dev-runtime en el escaneo de dependencias del
-// servidor de desarrollo en vez de preact/jsx-dev-runtime, sin que
-// optimizeDeps.esbuildOptions (deprecado) lo corrija. El transform clásico
-// no depende de resolver ningún paquete "*jsx-runtime": cada .jsx importa
-// `h`/`Fragment` de 'preact' a mano. Nada de @preact/preset-vite ni de
-// dependencia nueva más allá de preact y vite, las dos únicas autorizadas.
+// PWA sobre GitHub Pages. JSX clásico de Preact tanto en desarrollo como
+// en producción; Oxc es el transformador vigente de Vite 8.
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -14,13 +7,20 @@ export default defineConfig({
   plugins: [{
     name: 'candelaria-recursos-pwa',
     generateBundle(_opciones, bundle) {
-      const recursos = Object.keys(bundle).filter((ruta) => /\.(js|css|woff2)$/.test(ruta));
-      this.emitFile({ type: 'asset', fileName: 'recursos-pwa.json', source: JSON.stringify(recursos) });
+      // Sólo el grafo estático de entrada. Excel y herramientas privadas
+      // dinámicas se cachean al usarlas, sin descargarlas al instalar el catálogo.
+      const recursos = new Set(Object.keys(bundle).filter((ruta) => /\.(css|woff2)$/.test(ruta)));
+      function incluir(ruta) {
+        if (recursos.has(ruta)) return;
+        recursos.add(ruta);
+        const chunk = bundle[ruta];
+        if (chunk?.type === 'chunk') chunk.imports.forEach(incluir);
+      }
+      Object.values(bundle).filter((item) => item.type === 'chunk' && item.isEntry).forEach((item) => incluir(item.fileName));
+      this.emitFile({ type: 'asset', fileName: 'recursos-pwa.json', source: JSON.stringify([...recursos]) });
     },
   }],
-  esbuild: {
-    jsx: 'transform',
-    jsxFactory: 'h',
-    jsxFragment: 'Fragment',
+  oxc: {
+    jsx: { runtime: 'classic', pragma: 'h', pragmaFrag: 'Fragment' },
   },
 });

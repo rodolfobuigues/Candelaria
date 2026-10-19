@@ -55,6 +55,13 @@ beforeEach(async () => {
 });
 
 describe('catalogoRepo — coincide con el motor', () => {
+  test('renombrar un insumo con rol estable mantiene el costo original', async () => {
+    const original = await obtenerCatalogo(db, PARAMETROS_INICIALES);
+    await guardar(db, TIENDAS.INSUMOS, {...INSUMOS_FIJOS[0],nombre:'Cera de proveedor nuevo',rolMotor:'ceraAltoPF'});
+    invalidarCatalogo();
+    const actual = await obtenerCatalogo(db, PARAMETROS_INICIALES);
+    assert.equal(actual.productos[0].precio,original.productos[0].precio);
+  });
   test('V1 Pino chico reproduce el caso de referencia de ESPECIFICACION.md § 8', async () => {
     const { productos } = await obtenerCatalogo(db, PARAMETROS_INICIALES);
     const v1 = productos.find((p) => p.id === 'V1');

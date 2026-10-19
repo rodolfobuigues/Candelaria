@@ -12,8 +12,8 @@ sección 8 detalla, pantalla por pantalla, qué se conserva y qué se descarta.
 ## 1. Reglas duras
 
 1. **Un solo tema claro.** No hay modo oscuro ni interruptor para activarlo.
-2. **No hay cuentas de usuario.** Sin avatar, sin foto de perfil, sin "cerrar
-   sesión", sin nube.
+2. **Acceso privado para el creador autorizado.** El público consulta sin cuenta.
+   Cerrar sesión vive en Ajustes; sin avatar ni foto de perfil.
 3. **Una sola navegación:** la barra inferior de cuatro pestañas. **No hay menú
    hamburguesa** en ninguna pantalla.
 4. **Ningún valor literal fuera de `tokens.css`.** Ni un color, ni un radio, ni
@@ -27,6 +27,17 @@ sección 8 detalla, pantalla por pantalla, qué se conserva y qué se descarta.
 ---
 
 ## 2. Tokens de color
+
+Actualización autorizada el 19/10/2026: dirección **Continuidad terracota**.
+`tokens.css` contiene los valores efectivos. Se aclararon superficies, se redujo
+la sombra y se conservaron acento terracota y fuentes locales. Los ejemplos
+históricos de este documento no reemplazan los tokens vigentes.
+
+El catálogo público prioriza fotografía, nombre comercial, contenido entregado,
+precio y consulta. La ausencia de foto se indica; no se inventan imágenes.
+El número comercial queda vacío por decisión del dueño; se puede copiar la consulta.
+La galería admite teclado, Escape y retorno del foco. Altas y ediciones ocultan
+la barra inferior y advierten sobre cambios sin guardar. Verificar 360/480/640/1024 px.
 
 Tomados del bloque YAML del sistema de diseño. **La prosa de ese documento
 proponía otros valores; se descarta.** Único agregado: la familia `gold`, que

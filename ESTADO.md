@@ -1,6 +1,6 @@
 # Candelaria — Estado del proyecto
 
-**Actualizado: 15/09/2026**
+**Actualizado: 19/10/2026**
 
 Documento vivo. Se actualiza al cerrar cada fase. Es lo primero que hay que leer
 al abrir un chat nuevo.
@@ -13,11 +13,35 @@ al abrir un chat nuevo.
 |---|---|
 | Carpeta | `D:\Colo\Candelaria` |
 | Repositorio | `https://github.com/rodolfobuigues/Candelaria.git`, rama `main` |
-| Publicación | `https://rodolfobuigues.github.io/Candelaria/`, despliegue automático por GitHub Actions |
-| Tests | `npm test`: 255 pruebas en verde el 15/09/2026 |
-| Compilación | `npm run build` correcta el 15/09/2026 |
-| Estado actual | Catálogo, costos, pedidos, mensajes, fotos y ajustes conectados a Supabase |
-| Próximo paso | Validar exportación/revisión XLSX sin cambios en Android; no importar datos de prueba |
+| Publicación | `https://rodolfobuigues.github.io/Candelaria/`; este corte verifica cambios locales, sin confirmar un despliegue nuevo |
+| Tests | `npm run test:detalle`: 289 pruebas aprobadas, 27 suites, 0 fallos el 19/10/2026 |
+| Compilación | Build correcto: Vite 8.1.6, 104 módulos; `verificar:build` aprobado el 19/10/2026 |
+| Estado actual | Mejoras verificadas localmente; migraciones instaladas y permisos comprobados en Supabase. Frontend pendiente de publicación |
+| Próximo paso | Publicar y comprobar el catálogo; completar fotos y verificación Android. Ver `MEJORAS.md` |
+
+### Cierre local — 19/10/2026
+
+El registro central de cambios es [MEJORAS.md](MEJORAS.md). Se aplicaron validadores,
+altas protegidas, roles de insumos, contenido comercial, concurrencia de pedidos,
+respaldo con medios, formularios completos, borradores, navegación, accesibilidad,
+diseño Continuidad terracota y aislamiento de PWA. Se centralizaron plantillas y
+se excluyeron las fixtures de producción.
+
+Validación de cierre: 289 pruebas aprobadas, build de 104 módulos, 3 JavaScript
+sin fixtures privadas y 8 recursos de precaché sin Excel. PostgreSQL aislado
+con PGlite aprobó 18 comprobaciones. `git diff --check` quedó sin errores.
+Las pruebas locales se complementaron con la instalación remota de las migraciones
+y comprobaciones de permisos como anónimo, creador y otro autenticado. Las cinco
+colecciones conservaron sus huellas y cantidades: 30 insumos, 89 productos,
+36 combos, 0 parámetros y 3 pedidos. El registro de cuentas quedó cerrado.
+Se limpiaron las 36 descripciones públicas con el constructor de la aplicación,
+sin cambiar precios ni fotos. Copia privada previa con registros y 13 fotos;
+JSON autocontenido validado. `npm audit` informó 0 vulnerabilidades.
+WhatsApp permanece sin configurar; faltan fotos reales y validación en Android.
+
+Los apartados fechados en julio o septiembre conservan decisiones y evidencia
+históricas. Sus conteos, recursos de precaché y pruebas móviles no describen esta
+versión. Para el alcance actual mandan ESPECIFICACION.md y DISENO.md actualizados.
 
 ### Fuente de datos vigente
 
@@ -46,7 +70,7 @@ usarse para sobrescribir el catálogo remoto.
 | 5 — Importador y Excel | 🔄 | Exportación, revisión y aplicación transaccional XLSX; función instalada y probada en tablas temporales, pendiente validación XLSX en Android |
 | 6 — PWA publicada | ✅ | GitHub Pages activo; instalación, apertura desde icono, fotos y actualización verificadas en Android físico el 14/09/2026 |
 | 7 — Supabase | ✅ | Autenticación, tablas, RLS y catálogo remoto vigentes |
-| 8 — Endurecimiento | 🔄 | Correcciones de pedidos, navegación, mensajes, restauración protegida y fotos migradas a Storage |
+| 8 — Endurecimiento | 🔄 | Implementado y probado localmente el 19/10; comprobar instalación remota y Android. Ver `MEJORAS.md` |
 | 9 — Catálogo público | ✅ | Proyección pública exclusiva de combos; recetas, costos, pedidos y ajustes requieren autenticación |
 
 ---
@@ -273,6 +297,8 @@ A 360 px de ancho, medido en el navegador con `getBoundingClientRect()`:
 ---
 
 ## Cómo trabajar para gastar menos crédito
+
+Procedimiento histórico del 23/07. No reemplaza las instrucciones actuales del usuario.
 
 División de tareas, decidida el 23/07:
 
