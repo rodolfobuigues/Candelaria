@@ -13,9 +13,10 @@ import { navegarA } from '../../enrutador.js';
 import { GaleriaFotos } from '../../comun/GaleriaFotos.jsx';
 import { guardarFotosEnStorage } from '../../../persistencia/fotosStorage.js';
 import { supabaseConfigurado } from '../../../config/supabase.js';
-import { construirCatalogoPublico, normalizarBusqueda, sugerirDescripcionComercial, sincronizarCatalogoPublico } from '../../../persistencia/catalogoPublicoRepo.js';
+import { construirCatalogoPublico, sugerirDescripcionComercial, sincronizarCatalogoPublico } from '../../../persistencia/catalogoPublicoRepo.js';
 import { TarjetaCatalogo } from '../CatalogoPublico/CatalogoPublico.jsx';
 import { useCambiosSinGuardar } from '../../../hooks/useCambiosSinGuardar.js';
+import { BuscadorComponentes } from './BuscadorComponentes.jsx';
 
 function numeroTexto(numero, decimales = 1) {
   return new Intl.NumberFormat('es-AR', { maximumFractionDigits: decimales, minimumFractionDigits: 0 }).format(numero);
@@ -30,7 +31,7 @@ export function ComboForm({ id = null }) {
   const [preparandoFotos, setPreparandoFotos] = useState(false);
   const [resumen, setResumen] = useState(null);
   const [contextoCalculo, setContextoCalculo] = useState(null);
-  const [busquedaComponente, setBusquedaComponente] = useState('');
+  const [lineaEnEdicion, setLineaEnEdicion] = useState(null);
   const [guardadoPendientePublicar, setGuardadoPendientePublicar] = useState(false);
   const { marcarGuardado } = useCambiosSinGuardar(form, Boolean(contextoCalculo));
 
@@ -86,14 +87,21 @@ export function ComboForm({ id = null }) {
     }
   }, [contextoCalculo, form.lineas]);
 
-  function agregarLinea() {
-    const opcion = opciones[0];
-    if (opcion) setForm((actual) => ({ ...actual, lineas: [...actual.lineas, { tipo: opcion.tipo, refId: opcion.id, cantidad: 1 }] }));
+  function elegirComponente(opcion) {
+    if (guardando || guardadoPendientePublicar || preparandoFotos) return;
+    setForm((actual) => ({ ...actual, lineas: lineaEnEdicion === null
+      ? [...actual.lineas, { tipo: opcion.tipo, refId: opcion.id, cantidad: 1 }]
+      : actual.lineas.map((linea, indice) => indice === lineaEnEdicion ? { ...linea, tipo: opcion.tipo, refId: opcion.id } : linea) }));
+    setLineaEnEdicion(null);
   }
 
-  function cambiarLinea(indice, campo, valor) {
-    const opcion = campo === 'refId' ? opciones.find((item) => `${item.tipo}:${item.id}` === valor) : null;
-    setForm((actual) => ({ ...actual, lineas: actual.lineas.map((linea, posicion) => posicion === indice ? { ...linea, [campo]: campo === 'cantidad' ? Number(valor) || 0 : opcion?.id ?? valor, ...(opcion ? { tipo: opcion.tipo } : {}) } : linea) }));
+  function cambiarCantidad(indice, valor) {
+    setForm((actual) => ({ ...actual, lineas: actual.lineas.map((linea, posicion) => posicion === indice ? { ...linea, cantidad: Number(valor) || 0 } : linea) }));
+  }
+
+  function quitarLinea(indice) {
+    setForm((actual) => ({ ...actual, lineas: actual.lineas.filter((_, posicion) => posicion !== indice) }));
+    setLineaEnEdicion((actual) => actual === indice ? null : actual !== null && actual > indice ? actual - 1 : actual);
   }
 
   async function guardarCombo() {
@@ -126,14 +134,16 @@ export function ComboForm({ id = null }) {
         <label class="campo-entrada"><span>Nombre interno del combo *</span><input value={form.nombre} onInput={(e) => setForm({ ...form, nombre: e.currentTarget.value })} /></label>
         <label class="campo-entrada"><span>Código del combo</span><input value={form.id} disabled /></label>
         <h2 class="texto-seccion formulario-subtitulo">Componentes</h2>
-        <label class="campo-entrada"><span>Buscar componente</span><input type="search" value={busquedaComponente} onInput={(e) => setBusquedaComponente(e.currentTarget.value)} placeholder="Nombre o código" /></label>
-        {form.lineas.map((linea, indice) => (
-          <div class="formulario-linea" key={`${indice}-${linea.refId}`}>
-            <select aria-label={`Componente ${indice + 1}`} value={`${linea.tipo}:${linea.refId}`} onChange={(e) => cambiarLinea(indice, 'refId', e.currentTarget.value)}>{opciones.filter((opcion) => (opcion.id === linea.refId && opcion.tipo === linea.tipo) || normalizarBusqueda(opcion.etiqueta).includes(normalizarBusqueda(busquedaComponente))).map((opcion) => <option value={`${opcion.tipo}:${opcion.id}`} key={`${opcion.tipo}-${opcion.id}`}>{opcion.etiqueta}</option>)}</select>
-            <input type="number" min="0.01" step="0.1" value={linea.cantidad} onInput={(e) => cambiarLinea(indice, 'cantidad', e.currentTarget.value)} aria-label="Cantidad del componente" />
-            <button type="button" class="boton-texto" onClick={() => setForm({ ...form, lineas: form.lineas.filter((_, posicion) => posicion !== indice) })}>Quitar</button>
-          </div>
-        ))}
+        <BuscadorComponentes opciones={opciones} alElegir={elegirComponente} reemplazando={lineaEnEdicion} alCancelar={() => setLineaEnEdicion(null)} />
+        {form.lineas.map((linea, indice) => {
+          const opcion = opciones.find((item) => item.tipo === linea.tipo && item.id === linea.refId);
+          const nombre = opcion?.nombre ?? linea.refId;
+          return <div class="formulario-linea combo-componente" key={`${indice}-${linea.tipo}-${linea.refId}`}>
+            <div class="combo-componente__identidad"><strong>{nombre}</strong><span class="texto-cuerpo-s">{opcion?.codigo ?? linea.refId} · {linea.tipo === 'PRODUCTO' ? 'Producto' : 'Insumo'}</span></div>
+            <label class="campo-entrada"><span>Cantidad{opcion?.unidad ? ` (${opcion.unidad})` : ''}</span><input type="number" min="0.01" step="any" value={linea.cantidad} onInput={(e) => cambiarCantidad(indice, e.currentTarget.value)} aria-label={`Cantidad de ${nombre}, componente ${indice + 1}`} /></label>
+            <div class="combo-componente__acciones"><button type="button" class="boton-texto" aria-label={`Cambiar ${nombre}, componente ${indice + 1}`} onClick={() => setLineaEnEdicion(indice)}>Cambiar</button><button type="button" class="boton-texto" aria-label={`Quitar ${nombre}, componente ${indice + 1}`} onClick={() => quitarLinea(indice)}>Quitar</button></div>
+          </div>;
+        })}
       </fieldset>
       {!guardadoPendientePublicar && <GaleriaFotos disabled={guardando} alProcesar={setPreparandoFotos} fotos={form.fotos} nombre={form.nombreComercial || form.nombre || 'combo'} cambiar={(fotos) => setForm((actual) => ({ ...actual, fotos }))} />}
       <fieldset class="tarjeta formulario-campos formulario-sin-borde" disabled={guardadoPendientePublicar || guardando || preparandoFotos}><h2 class="texto-seccion">Publicación comercial</h2><p class="texto-cuerpo-s">Describí lo que recibe el cliente. No incluyas cantidades de fabricación, costos ni mano de obra. Si dejás la descripción vacía, solo se mostrará el contenido de productos terminados.</p>
@@ -146,7 +156,6 @@ export function ComboForm({ id = null }) {
         {form.fotos.some((foto) => !/^https:\/\//i.test(foto)) && <p class="texto-cuerpo-s">Las fotos nuevas se subirán a Storage al guardar para que puedan verse en el catálogo.</p>}
       </fieldset>
       {resumen && <><div class="ficha-producto__identidad combo-precio"><span class="etiqueta">Precio de venta</span><strong class="importe-l ficha-producto__precio">{formatearImporte(resumen.combo.precioCombo)}</strong></div><section class="tarjeta ficha-seccion"><h2 class="texto-seccion">Datos del combo</h2><h3 class="texto-seccion">Insumos necesarios</h3><ul class="lista ficha-lista">{resumen.insumos.map((insumo) => <li class="fila-lista" key={insumo.id}><div class="fila-lista__contenido"><strong class="nombre-truncado">{insumo.nombre}</strong><span class="texto-cuerpo-s fila-lista__codigo">Cantidad total: {numeroTexto(insumo.cantidad, 6)} {insumo.unidad}</span></div><span class="importe">{formatearCostoUnitario(insumo.costo)}</span></li>)}</ul><dl class="ficha-costos"><div><dt>Costo de componentes</dt><dd>{formatearImporte(resumen.materiales)}</dd></div><div><dt>Mano de obra · {numeroTexto(resumen.minutos, 0)} min</dt><dd>{formatearImporte(resumen.manoObra)}</dd></div></dl><div class="ficha-indicadores"><div class="indicador"><span class="etiqueta">Margen sobre costo</span><strong>{resumen.indicadores.margenSobreCosto === null ? 'No disponible' : numeroTexto(resumen.indicadores.margenSobreCosto * 100) + ' %'}</strong></div><div class="indicador"><span class="etiqueta">Peso mano de obra</span><strong>{resumen.indicadores.pesoManoObra === null ? 'No disponible' : numeroTexto(resumen.indicadores.pesoManoObra * 100) + ' %'}</strong></div><div class="indicador"><span class="etiqueta">Beneficio bruto</span><strong>{formatearImporte(resumen.indicadores.beneficioBruto)}</strong></div><div class="indicador"><span class="etiqueta">Beneficio neto</span><strong>{formatearImporte(resumen.indicadores.beneficioNeto)}</strong></div><div class="indicador"><span class="etiqueta">Minutos mano de obra</span><strong>{numeroTexto(resumen.minutos, 0)} min</strong></div></div></section></>}
-      {!guardadoPendientePublicar && <button type="button" class="boton-secundario" disabled={guardando || preparandoFotos} onClick={agregarLinea}>Agregar componente</button>}
       {error && <p class="aviso">{error}</p>}
       {guardadoPendientePublicar ? <><button type="button" class="boton-primario" disabled={guardando} onClick={reintentarPublicacion}>Reintentar publicación</button><button type="button" class="boton-secundario" onClick={() => navegarA('productos')}>Volver a productos</button></> : <button type="button" class="boton-primario" disabled={guardando || preparandoFotos} onClick={guardarCombo}>{guardando ? 'Guardando…' : 'Guardar combo'}</button>}
     </section>

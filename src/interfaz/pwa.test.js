@@ -47,14 +47,14 @@ test('el worker conserva otras apps y no devuelve HTML por una imagen offline', 
   const cache = { match: async (peticion) => peticion === '/Candelaria/' ? new Response('<html>inicio</html>') : undefined, put: async () => {} };
   const contexto = {
     self: { location: { origin: 'https://sitio.test' }, clients: { claim: async () => {} }, addEventListener: (nombre, fn) => { manejadores[nombre] = fn; } },
-    caches: { keys: async () => ['otra-app-v1', 'candelaria-v4', 'candelaria-v5'], delete: async (nombre) => { borradas.push(nombre); }, open: async () => cache },
+    caches: { keys: async () => ['otra-app-v1', 'candelaria-v4', 'candelaria-v5', 'candelaria-v6'], delete: async (nombre) => { borradas.push(nombre); }, open: async () => cache },
     fetch: async () => { throw new Error('sin conexión'); }, URL, Response,
   };
   runInNewContext(leer('public/sw.js'), contexto);
   let activacion;
   manejadores.activate({ waitUntil: (promesa) => { activacion = promesa; } });
   await activacion;
-  assert.deepEqual(borradas, ['candelaria-v4']);
+  assert.deepEqual(borradas, ['candelaria-v4', 'candelaria-v5']);
   for (const url of ['https://otra.test/Candelaria/foto.jpg', 'https://sitio.test/OtraApp/']) {
     let interceptada = false;
     manejadores.fetch({ request: { method: 'GET', url }, respondWith: () => { interceptada = true; } });

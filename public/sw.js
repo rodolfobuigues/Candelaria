@@ -1,5 +1,5 @@
 const PREFIJO_CACHE = 'candelaria-';
-const CACHE = `${PREFIJO_CACHE}v5`;
+const CACHE = `${PREFIJO_CACHE}v6`;
 const BASE = '/Candelaria/';
 const INICIALES = [BASE, `${BASE}manifest.webmanifest`, `${BASE}icono-candelaria.svg`, `${BASE}icono-candelaria-maskable.svg`];
 

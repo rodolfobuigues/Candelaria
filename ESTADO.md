@@ -19,6 +19,16 @@ al abrir un chat nuevo.
 | Estado actual | Mejoras publicadas; migraciones instaladas y permisos comprobados en Supabase. Catálogo real de 36 combos verificado |
 | Próximo paso | Completar fotos, revisión editorial y verificación Android. WhatsApp pendiente del número comercial. Ver `MEJORAS.md` |
 
+### Buscador directo de componentes — 19/10/2026
+
+Nuevo combo y edición permiten escribir nombre o código y tocar una sugerencia.
+Se agrega con cantidad 1, editable después, según confirmó el usuario. Cambiar un
+componente conserva su cantidad. Búsqueda sin acentos, prioridad de coincidencias
+directas, seis sugerencias como máximo y selección por teclado. Verificación
+local de alta, cambio, cantidades decimales y reapertura correctas; sin desborde
+en 360/480/640/1024 px. No requiere migraciones ni servicios nuevos. Worker v6.
+Detalle y límites en `MEJORAS.md`.
+
 ### Cierre local — 19/10/2026
 
 El registro central de cambios es [MEJORAS.md](MEJORAS.md). Se aplicaron validadores,

@@ -4,6 +4,33 @@ Estado de este corte: implementación verificada, migraciones instaladas en Supa
 
 Las fuentes funcionales y visuales son [ESPECIFICACION.md](ESPECIFICACION.md) y [DISENO.md](DISENO.md). El diagnóstico que originó el trabajo está en `D:/Maira/App Velas/revision-2026-10-19/INFORME.md`. Ambas carpetas corresponden al mismo producto; `App Velas` conserva las fuentes del negocio.
 
+## Buscador de componentes — ampliación del 19/10/2026
+
+El usuario confirmó agregar cada componente con cantidad 1 y editarla después.
+Nuevo combo y edición usan sugerencias visibles mientras se escribe nombre o
+código, sin abrir un selector largo. La búsqueda ignora acentos y mayúsculas,
+admite varias palabras y prioriza códigos exactos y nombres que empiezan por el
+texto buscado. Muestra hasta seis coincidencias y avisa si conviene afinar.
+
+Cada resultado distingue Producto/Insumo y código. Al tocarlo se agrega con
+cantidad 1, se limpia la consulta y se mantiene el foco para seguir agregando.
+Cada línea muestra su cantidad editable, Cambiar y Quitar. Cambiar reutiliza el
+buscador y conserva la cantidad. Se mantiene la navegación con teclado y se
+informa cuando no hay coincidencias. No requiere cambios de base ni servicios
+nuevos. El worker pasa a v6 para que las instalaciones detecten la actualización.
+
+Verificación en navegador local aislado: «marg» encontró Margaritas; «CÉRA alto»
+encontró el insumo; M5 encontró Pabilo; una búsqueda inexistente no agregó líneas.
+Se agregó con cantidad 1, se editó a 2,5, se cambió el componente conservando esa
+cantidad y se guardó/reabrió el combo con sus tres líneas intactas. Flecha abajo y
+Enter seleccionaron un resultado. En 360/480/640/1024 px hubo 0 px de desborde y
+las sugerencias midieron 69,6 px de alto. Los registros de prueba se guardaron
+sólo en IndexedDB local; no se escribieron combos de prueba en Supabase.
+
+Pruebas generales: 289 aprobadas, 27 suites, sin fallos ni omitidas. La prueba de
+cachés contempla la eliminación de v4/v5 y conservación de v6 y otras apps.
+La comprobación física del teclado de Android sigue pendiente.
+
 ## Mejoras implementadas
 
 | Mejora | Implementación y validación |
