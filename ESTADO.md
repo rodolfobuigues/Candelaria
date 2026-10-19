@@ -13,11 +13,11 @@ al abrir un chat nuevo.
 |---|---|
 | Carpeta | `D:\Colo\Candelaria` |
 | Repositorio | `https://github.com/rodolfobuigues/Candelaria.git`, rama `main` |
-| Publicación | `https://rodolfobuigues.github.io/Candelaria/`; este corte verifica cambios locales, sin confirmar un despliegue nuevo |
+| Publicación | `https://rodolfobuigues.github.io/Candelaria/`; commit de implementación `7f14953` publicado y verificado el 19/10/2026 |
 | Tests | `npm run test:detalle`: 289 pruebas aprobadas, 27 suites, 0 fallos el 19/10/2026 |
 | Compilación | Build correcto: Vite 8.1.6, 104 módulos; `verificar:build` aprobado el 19/10/2026 |
-| Estado actual | Mejoras verificadas localmente; migraciones instaladas y permisos comprobados en Supabase. Frontend pendiente de publicación |
-| Próximo paso | Publicar y comprobar el catálogo; completar fotos y verificación Android. Ver `MEJORAS.md` |
+| Estado actual | Mejoras publicadas; migraciones instaladas y permisos comprobados en Supabase. Catálogo real de 36 combos verificado |
+| Próximo paso | Completar fotos, revisión editorial y verificación Android. WhatsApp pendiente del número comercial. Ver `MEJORAS.md` |
 
 ### Cierre local — 19/10/2026
 
@@ -38,6 +38,12 @@ Se limpiaron las 36 descripciones públicas con el constructor de la aplicación
 sin cambiar precios ni fotos. Copia privada previa con registros y 13 fotos;
 JSON autocontenido validado. `npm audit` informó 0 vulnerabilidades.
 WhatsApp permanece sin configurar; faltan fotos reales y validación en Android.
+
+GitHub Pages completó correctamente el flujo del commit `7f14953`. El catálogo
+publicado muestra los 36 combos y el enlace individual del combo 7 conserva su
+foto y precio de $23.800. La consulta confirmó la copia y la medición móvil no
+mostró desborde. El panel se verificó localmente; no se crearon pedidos de prueba
+en producción. Evidencia y límites en `MEJORAS.md`.
 
 Los apartados fechados en julio o septiembre conservan decisiones y evidencia
 históricas. Sus conteos, recursos de precaché y pruebas móviles no describen esta

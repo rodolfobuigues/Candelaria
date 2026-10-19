@@ -1,6 +1,6 @@
 # Candelaria — Mejoras del 19/10/2026
 
-Estado de este corte: implementación local verificada y migraciones instaladas en Supabase. Publicación del frontend pendiente de confirmar. Supabase conserva la información vigente; las fixtures son material histórico para pruebas y desarrollo.
+Estado de este corte: implementación verificada, migraciones instaladas en Supabase y frontend publicado en [Candelaria](https://rodolfobuigues.github.io/Candelaria/). Supabase conserva la información vigente; las fixtures son material histórico para pruebas y desarrollo.
 
 Las fuentes funcionales y visuales son [ESPECIFICACION.md](ESPECIFICACION.md) y [DISENO.md](DISENO.md). El diagnóstico que originó el trabajo está en `D:/Maira/App Velas/revision-2026-10-19/INFORME.md`. Ambas carpetas corresponden al mismo producto; `App Velas` conserva las fuentes del negocio.
 
@@ -60,6 +60,14 @@ La copia privada previa conserva los registros originales y 13 imágenes descarg
 
 En el navegador, el catálogo aislado tuvo 0 px de desborde en marcos de 360/480/640/1024 px (áreas internas de 345/465/625/1009 px), sin controles menores de 48 px. Se comprobaron búsqueda con acentos, búsqueda de contenido, orden de menor precio, respuesta de copia de consulta y galería con foco inicial, Tab contenido, Escape y retorno de foco. El panel aislado conservó una selección de $8.300 al cambiar de pestaña; buscó un pedido por número; bloqueó un alta con código V1 repetido, manteniendo nombre, receta y precio originales; mostró precio en vivo, aviso de salida y error específico para redondeo cero. No se escribieron pedidos ni productos de prueba en Supabase.
 
+## Publicación verificada
+
+El commit de implementación `7f14953` se publicó mediante el [flujo de GitHub Pages aprobado](https://github.com/rodolfobuigues/Candelaria/actions/runs/39300065704). Pruebas, compilación, control de fixtures y despliegue terminaron correctamente el 19/10/2026.
+
+En la dirección pública se observaron los 36 combos. El [enlace del combo 7](https://rodolfobuigues.github.io/Candelaria/#/catalogo?combo=7) mostró su foto real, descripción comercial y precio conservado de $23.800; la acción de consulta mostró confirmación de copia. La medición móvil dio 375 px de área y contenido, sin desborde. WhatsApp permanece vacío. Capturas en `D:/Maira/App Velas/revision-2026-10-19/catalogo-publicado.png` y `combo-publicado.png`.
+
+El panel privado se verificó en un origen local aislado; no se crearon operaciones comerciales de prueba en producción. Los permisos y los datos reales se verificaron en Supabase. Queda pendiente la prueba completa en Android físico y con lector de pantalla.
+
 ## Pendientes visibles
 
 | Pendiente | Condición de cierre |
@@ -67,7 +75,6 @@ En el navegador, el catálogo aislado tuvo 0 px de desborde en marcos de 360/480
 | WhatsApp comercial | El número permanece sin configurar. El catálogo permite copiar consultas. Habilitar el enlace sólo después de guardar el número internacional confirmado. |
 | Fotos y contenido comercial | Subir fotos reales de los 28 combos sin foto y revisar nombres/descripciones comerciales. Conteo confirmado en la copia actual del 19/10: 8 de 36 con fotos. |
 | Referencias gráficas maestras | Incorporar las cuatro imágenes maestras citadas por los documentos del catálogo cuando estén disponibles. No se sustituyeron con imágenes ficticias. |
-| Despliegue | Publicar sólo después de comprobar las migraciones y volver a validar el catálogo publicado. La existencia de `dist` no significa que se haya desplegado. |
 | Android físico | Comprobar instalación/actualización PWA, navegación, teclado, fotos y exportación/revisión XLSX con datos actuales. Las verificaciones de septiembre son históricas. |
 
 Storage no participa de la transacción PostgreSQL. La restauración prepara fotos antes de confirmar la base y no borra objetos previos; una operación fallida puede dejar archivos sin referencia. Las URLs de una copia previa de emergencia no recuperan fotos que ya desaparecieron.
