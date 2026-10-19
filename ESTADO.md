@@ -13,9 +13,9 @@ al abrir un chat nuevo.
 |---|---|
 | Carpeta | `D:\Colo\Candelaria` |
 | Repositorio | `https://github.com/rodolfobuigues/Candelaria.git`, rama `main` |
-| Publicación | `https://rodolfobuigues.github.io/Candelaria/`; commit de implementación `7f14953` publicado y verificado el 19/10/2026 |
+| Publicación | `https://rodolfobuigues.github.io/Candelaria/`; buscador de componentes `c5320a4` publicado y verificado el 19/10/2026 |
 | Tests | `npm run test:detalle`: 289 pruebas aprobadas, 27 suites, 0 fallos el 19/10/2026 |
-| Compilación | Build correcto: Vite 8.1.6, 104 módulos; `verificar:build` aprobado el 19/10/2026 |
+| Compilación | Build correcto: Vite 8.1.6, 105 módulos; `verificar:build` aprobado el 19/10/2026 |
 | Estado actual | Mejoras publicadas; migraciones instaladas y permisos comprobados en Supabase. Catálogo real de 36 combos verificado |
 | Próximo paso | Completar fotos, revisión editorial y verificación Android. WhatsApp pendiente del número comercial. Ver `MEJORAS.md` |
 
@@ -28,6 +28,9 @@ directas, seis sugerencias como máximo y selección por teclado. Verificación
 local de alta, cambio, cantidades decimales y reapertura correctas; sin desborde
 en 360/480/640/1024 px. No requiere migraciones ni servicios nuevos. Worker v6.
 Detalle y límites en `MEJORAS.md`.
+
+El flujo de GitHub Pages del commit `c5320a4` terminó correctamente; el HTML
+público sirve `assets/index-an-Ntynq.js`, coincidente con el build verificado.
 
 ### Cierre local — 19/10/2026
 

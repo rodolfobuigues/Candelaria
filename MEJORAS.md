@@ -31,6 +31,12 @@ Pruebas generales: 289 aprobadas, 27 suites, sin fallos ni omitidas. La prueba d
 cachés contempla la eliminación de v4/v5 y conservación de v6 y otras apps.
 La comprobación física del teclado de Android sigue pendiente.
 
+Publicado en `c5320a4`, con [GitHub Pages aprobado](https://github.com/rodolfobuigues/Candelaria/actions/runs/39307948846).
+Build de 105 módulos; JavaScript principal 139,02 kB (42,56 kB gzip). Control de
+fixtures y precaché aprobado. El HTML público sirve `assets/index-an-Ntynq.js`,
+coincidente con el archivo compilado. Captura de la prueba móvil en
+`D:/Maira/App Velas/revision-2026-10-19/buscador-combos-movil.png`.
+
 ## Mejoras implementadas
 
 | Mejora | Implementación y validación |
@@ -55,7 +61,7 @@ La comprobación física del teclado de Android sigue pendiente.
 | PWA | Cachés y peticiones limitadas a Candelaria; se preservan otras aplicaciones del origen. La reserva HTML se limita a navegación. Excel queda fuera del precaché público y se solicita persistencia local. |
 | Producción y dependencias | Fixtures excluidas del build. Vite 8.1.6 con PostCSS 8.5.31 y uuid 11.1.1 en la cadena de ExcelJS 4.4.0. CI verifica pruebas, build y ausencia de fixtures antes de publicar. |
 
-## Verificación local de este corte
+## Verificación local de la primera publicación (`7f14953`)
 
 Comandos ejecutados el 19/10/2026, con datos históricos o bases aisladas. No importaron datos ni ejecutaron migraciones sobre Supabase.
 
@@ -87,7 +93,7 @@ La copia privada previa conserva los registros originales y 13 imágenes descarg
 
 En el navegador, el catálogo aislado tuvo 0 px de desborde en marcos de 360/480/640/1024 px (áreas internas de 345/465/625/1009 px), sin controles menores de 48 px. Se comprobaron búsqueda con acentos, búsqueda de contenido, orden de menor precio, respuesta de copia de consulta y galería con foco inicial, Tab contenido, Escape y retorno de foco. El panel aislado conservó una selección de $8.300 al cambiar de pestaña; buscó un pedido por número; bloqueó un alta con código V1 repetido, manteniendo nombre, receta y precio originales; mostró precio en vivo, aviso de salida y error específico para redondeo cero. No se escribieron pedidos ni productos de prueba en Supabase.
 
-## Publicación verificada
+## Primera publicación verificada (`7f14953`)
 
 El commit de implementación `7f14953` se publicó mediante el [flujo de GitHub Pages aprobado](https://github.com/rodolfobuigues/Candelaria/actions/runs/39300065704). Pruebas, compilación, control de fixtures y despliegue terminaron correctamente el 19/10/2026.
 

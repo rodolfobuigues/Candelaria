@@ -26,6 +26,12 @@ El borrador se aísla por usuario y pestaña en `sessionStorage`, caduca a las o
 horas y se elimina al guardar, descartar o cerrar sesión. No se sincroniza.
 Las fixtures sólo se cargan en desarrollo local vacío, nunca en producción.
 
+En Nuevo combo y edición, los componentes se buscan escribiendo parte del nombre
+o código y tocando una sugerencia. Cada selección agrega cantidad 1, editable
+después, según confirmó el dueño el 19/10. Cambiar un componente conserva su
+cantidad. Se distinguen productos e insumos y no se requiere recorrer un selector
+nativo. La búsqueda ignora acentos y mayúsculas y prioriza coincidencias directas.
+
 En confirmación, sin seña se omiten los renglones de seña y saldo (criterio 17).
 En recibos y rectificaciones se conserva cero cuando informa el estado financiero:
 anular el último pago debe mostrar total abonado cero. `{nota}` nunca expone la nota privada.
