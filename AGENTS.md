@@ -26,6 +26,10 @@ en una nueva regla. [MEJORAS.md](MEJORAS.md) conserva la evidencia de las mejora
 - Conservar datos, fotos, pagos, historial e identidades. No ejecutar `schema.sql`
   sobre la instalación existente ni todos los SQL como lote. No cargar fixtures
   en producción. Ver [SUPABASE.md](SUPABASE.md).
+- Toda tabla nueva accesible por la Data API debe declarar grants mínimos,
+  RLS y políticas en su archivo de creación. No depender de permisos automáticos
+  ni conceder acceso anónimo a tablas privadas. Probar la instalación sin grants
+  auxiliares sobre tablas de la app en `verificar_seguridad.mjs`.
 - No poner clientes, teléfonos, pagos, notas, tokens, contraseñas o respaldos
   privados en documentación, commits, capturas públicas o fixtures. No mostrar
   `.env.local`, `.mcp.json` ni credenciales para diagnosticar una variable.

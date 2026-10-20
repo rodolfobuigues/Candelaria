@@ -7,7 +7,7 @@ const db = new PGlite();
 const CREADOR = '00000000-0000-4000-8000-000000000001';
 const OTRO = '00000000-0000-4000-8000-000000000002';
 let comprobaciones = 0;
-const comprobar = (valor) => { assert.ok(valor); comprobaciones += 1; };
+const comprobar = (valor, mensaje) => { assert.ok(valor, mensaje); comprobaciones += 1; };
 try {
   await db.exec(`
     create role anon; create role authenticated;
@@ -19,16 +19,34 @@ try {
     alter table storage.objects enable row level security;
     grant usage on schema public,auth,storage to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;
+    -- Soporte de Storage administrado por Supabase, no tablas de la app.
+    grant select,insert,update,delete on storage.objects to authenticated;
   `);
   await db.exec(`insert into auth.users values ('${CREADOR}'),('${OTRO}'); set candelaria.creador_id='${CREADOR}';`);
   for (const archivo of ['schema.sql', 'seguridad_datos.sql', 'intercambio_excel.sql']) await db.exec(await readFile(new URL(archivo, import.meta.url), 'utf8'));
-  await db.exec(`grant select,insert,update,delete on public.insumos,public.productos,public.combos,public.parametros,public.pedidos,storage.objects to authenticated;
-    insert into public.creadores_autorizados(usuario_id) values ('${CREADOR}') on conflict do nothing;
-    set role authenticated; set request.jwt.claim.sub='${CREADOR}';
+  // Sin grants automáticos ni reparaciones de public desde el harness:
+  // los archivos de instalación deben entregar la matriz completa por sí solos.
+  const privadas = ['insumos', 'productos', 'combos', 'parametros', 'pedidos'];
+  for (const tabla of [...privadas, 'catalogo_publico_combos', 'creadores_autorizados']) {
+    comprobar((await db.query('select relrowsecurity from pg_class where oid=$1::regclass', [`public.${tabla}`])).rows[0].relrowsecurity,
+      `RLS debe estar habilitado en ${tabla}`);
+    for (const rol of ['anon', 'authenticated']) {
+      for (const permiso of ['SELECT', 'INSERT', 'UPDATE', 'DELETE']) {
+        const esperado = tabla === 'catalogo_publico_combos'
+          ? rol === 'authenticated' || permiso === 'SELECT'
+          : tabla !== 'creadores_autorizados' && rol === 'authenticated';
+        const real = (await db.query('select has_table_privilege($1,$2,$3) permitido', [rol, `public.${tabla}`, permiso])).rows[0].permitido;
+        comprobar(real === esperado, `${rol} ${permiso} en ${tabla}: esperado ${esperado}, recibido ${real}`);
+      }
+    }
+  }
+  await db.exec(`set role authenticated; set request.jwt.claim.sub='${CREADOR}';
     insert into public.insumos(id,codigo,nombre,unidad,monto_compra,cantidad_compra) values ('M1','M1','Cera de prueba','g',100,1);`);
+  for (const tabla of privadas) await db.query(`select * from public.${tabla}`);
   comprobar((await db.query('select * from public.insumos')).rows.length === 1);
   await db.exec(`set request.jwt.claim.sub='${OTRO}'`);
-  comprobar((await db.query('select * from public.insumos')).rows.length === 0);
+  for (const tabla of privadas) comprobar((await db.query(`select * from public.${tabla}`)).rows.length === 0,
+    `Otro autenticado no debe leer ${tabla}`);
   await assert.rejects(() => db.exec("insert into public.insumos(id,codigo,nombre,unidad) values ('M2','M2','Intruso','g')"), /row-level security/); comprobaciones += 1;
   await assert.rejects(() => db.query('select public.guardar_pedido_seguro($1::jsonb,0,true)', [{}]), /creador autorizado/); comprobaciones += 1;
   await db.exec(`set request.jwt.claim.sub='${CREADOR}'`);
@@ -62,8 +80,17 @@ try {
   await db.exec("update public.insumos set nombre='Nuevo nombre' where id='M1'");
   await assert.rejects(() => restaurar(previo, destino), /datos cambiaron/); comprobaciones += 1;
   comprobar((await db.query("select nombre from public.insumos where id='M1'")).rows[0].nombre === 'Nuevo nombre');
+  const estadoExcel = await snapshot();
+  delete estadoExcel.pedidos;
+  const cambiosExcel = { insumos: [{ ...Object.values(estadoExcel.insumos)[0], nombre: 'Actualizado desde Excel' }], productos: [], combos: [], parametros: [] };
+  const resultadoExcel = (await db.query('select public.aplicar_intercambio_excel($1::jsonb,$2::jsonb) resultado', [JSON.stringify(estadoExcel), JSON.stringify(cambiosExcel)])).rows[0].resultado;
+  comprobar(resultadoExcel.nuevos === 0 && resultadoExcel.modificados === 1);
+  comprobar((await db.query("select nombre from public.insumos where id='M1'")).rows[0].nombre === 'Actualizado desde Excel');
   await db.exec("reset role; insert into public.catalogo_publico_combos(id,nombre,precio) values ('C1','Comercial',100); set role anon; set request.jwt.claim.sub=''");
   comprobar((await db.query('select * from public.catalogo_publico_combos')).rows.length === 1);
-  await assert.rejects(() => db.query('select * from public.insumos'), /permission denied/); comprobaciones += 1;
-  console.log(`OK: ${comprobaciones} comprobaciones PostgreSQL aisladas: permisos, pagos, numeración, parámetros, respaldo, concurrencia y rollback.`);
+  for (const tabla of [...privadas, 'creadores_autorizados']) {
+    await assert.rejects(() => db.query(`select * from public.${tabla}`), (error) => error.code === '42501'); comprobaciones += 1;
+  }
+  await assert.rejects(() => db.exec("insert into public.catalogo_publico_combos(id,nombre) values ('C2','Intruso')"), (error) => error.code === '42501'); comprobaciones += 1;
+  console.log(`OK: ${comprobaciones} comprobaciones PostgreSQL aisladas: instalación sin grants automáticos, RLS, pagos, numeración, parámetros, respaldo, Excel, concurrencia y rollback.`);
 } finally { await db.close(); }

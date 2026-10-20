@@ -117,6 +117,14 @@ create policy "creador administra parametros" on public.parametros
 create policy "creador administra pedidos" on public.pedidos
   for all to authenticated using (public.es_creador_autorizado()) with check (public.es_creador_autorizado());
 
+-- Permisos explícitos para instalaciones sin grants automáticos de Supabase.
+-- RLS sigue restringiendo estas operaciones al creador autorizado.
+-- No dar acceso anónimo ni exponer creadores_autorizados.
+grant select, insert, update, delete
+on table public.insumos, public.productos, public.combos,
+         public.parametros, public.pedidos
+to authenticated;
+
 insert into storage.buckets (id, name, public)
 values ('catalogo', 'catalogo', true)
 on conflict (id) do nothing;

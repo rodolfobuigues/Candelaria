@@ -1,6 +1,6 @@
 # Continuidad, decisiones y pendientes
 
-Corte documental: 19/10/2026. Leer con [ESTADO.md](../ESTADO.md) y el código actual.
+Corte documental: 20/10/2026. Leer con [ESTADO.md](../ESTADO.md) y el código actual.
 No es una orden de implementar pendientes ni una certificación completa del producto.
 
 ## Decisiones confirmadas por el dueño
@@ -30,6 +30,10 @@ futuras restauraciones, permisos, pagos, mensajes o despliegues.
   volver a ejecutar lo pertinente después de cambiar código.
 - Pruebas SQL previas: 18 comprobaciones con PostgreSQL en memoria. Los tres
   roles también se verificaron en remoto sin crear pedidos de prueba.
+- Corrección de instalación del 20/10: grants explícitos de cinco tablas privadas
+  y prueba sin reparación auxiliar de permisos; 93 comprobaciones SQL aisladas.
+  No es una actualización de permisos remotos. Ver el
+  [análisis del cambio de Supabase](SUPABASE_PERMISOS_2026-10-30.md).
 - Android: navegador con ancho móvil verificado; la prueba física integral y
   con lector de pantalla sigue pendiente. No presentar emulación como esa prueba.
 
@@ -67,6 +71,7 @@ no hay garantía automática contra información privada tecleada en ese campo.
 | Android físico | Instalación/actualización PWA, teclado, búsqueda de combos, cantidades, fotos, descargas y portapapeles. |
 | Accesibilidad integral | Recorrido con lector de pantalla; las pruebas de contraste no lo sustituyen. |
 | Diferencias funcionales | Decisión/implementación y pruebas para cada fila de la tabla anterior. |
+| Permisos remotos tras aviso Supabase | Revisar en lectura Data API settings y ACL actuales; esquema y prueba local ya corregidos el 20/10. |
 
 Stock, producción, facturación, pagos online y múltiples creadores siguen fuera
 del alcance vigente. No convertirlos en pendientes incumplidos por estar presentes

@@ -1,6 +1,6 @@
 # Candelaria — Estado del proyecto
 
-**Actualizado: 19/10/2026**
+**Actualizado: 20/10/2026**
 
 Documento vivo. Se actualiza al cerrar una tarea relevante. Al abrir un chat nuevo
 empezar por [AGENTS.md](AGENTS.md) y [README.md](README.md), después este estado.
@@ -8,6 +8,26 @@ empezar por [AGENTS.md](AGENTS.md) y [README.md](README.md), después este estad
 ---
 
 ## Dónde estoy
+
+### Análisis del comunicado de Supabase — 20/10/2026
+
+El cambio del 30/10 conserva permisos de tablas existentes. Se reprodujo en
+PostgreSQL aislado una omisión de la instalación nueva: cinco tablas privadas
+sin grants para `authenticated`; el verificador actual los agrega por su cuenta.
+El creador recibe `42501` sin esos grants. Un grant específico en la base
+descartable corrige la lectura y conserva el bloqueo anónimo sobre insumos.
+No se cambiaron SQL, aplicación, permisos remotos ni datos; queda pendiente
+corregir instalación/prueba y comprobar ACL remotos en lectura. Detalle en
+[análisis de permisos](docs/SUPABASE_PERMISOS_2026-10-30.md).
+
+Corrección posterior autorizada: `schema.sql` incluye los grants explícitos de
+las cinco tablas privadas a `authenticated`. El verificador dejó de agregarlos
+como soporte y valida la matriz completa de siete tablas y dos roles, RLS y RPC.
+Antes de corregir el esquema falló por falta de SELECT en insumos; después
+aprobó 93 comprobaciones PostgreSQL aisladas, incluidas restauración, pedidos y
+aplicación Excel. No se cambiaron datos, ACL remotos, frontend ni dependencias.
+No se repitieron los 289 tests de UI/motor ni el build: esta corrección afecta
+el esquema de instalación y su prueba SQL. Sigue pendiente revisar ACL remotos.
 
 | | |
 |---|---|

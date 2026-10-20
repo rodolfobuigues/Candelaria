@@ -3,6 +3,16 @@
 Supabase es la fuente vigente; IndexedDB se reserva al desarrollo local sin
 configuración remota. No volver a importar la planilla histórica para actualizar.
 
+## Cambio de permisos del 30/10/2026
+
+Análisis del 20/10 en [impacto y verificación aislada](docs/SUPABASE_PERMISOS_2026-10-30.md).
+Las tablas existentes conservan permisos. Se corrigió `schema.sql` para conceder
+los permisos explícitos de las cinco tablas privadas a `authenticated`, conservando
+RLS. La prueba ya no repara esos permisos: verifica la instalación desde cero y
+aprobó 93 comprobaciones aisladas el 20/10. No se aplicaron cambios al remoto;
+la revisión de sus ACL actuales queda pendiente.
+No ejecutar el esquema ni grants generales sobre producción por este aviso.
+
 ## Identificar la instalación
 
 Verificado el 19/10/2026: proyecto Candelaria, referencia pública
